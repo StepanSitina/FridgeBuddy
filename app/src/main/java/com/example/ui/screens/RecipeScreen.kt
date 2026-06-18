@@ -37,7 +37,7 @@ fun RecipeScreen(
     val aiRecipeMarkdown by viewModel.aiRecipeMarkdown.collectAsState()
     val pantryItems by viewModel.pantryItems.collectAsState()
 
-    var activeScreenTab by remember { mutableStateOf("obed") } // "obed", "vecere", "dezert", "piti", "alkohol", "ChefAI"
+    var activeScreenTab by remember { mutableStateOf("obed") } // "obed", "vecere", "dezert", "piti", "ChefAI"
     var customQueryText by remember { mutableStateOf("") }
     var searchRecipeQuery by remember { mutableStateOf("") }
 
@@ -359,8 +359,7 @@ fun RecipeScreen(
                     Triple("obed", "Obědy 🍲", "Obedy 🍲"),
                     Triple("vecere", "Večeře 🌙", "Večera 🌙"),
                     Triple("dezert", "Dezerty/Buchty 🍰", "Dezerty/Buchty 🍰"),
-                    Triple("piti", "Nápoje 🍹", "Nápoje 🍹"),
-                    Triple("alkohol", "Alkoholické drinky 🍸", "Alkoholické drinky 🍸")
+                    Triple("piti", "Nápoje 🍹", "Nápoje 🍹")
                 )
 
                 tabs.forEach { (tabKey, nameCZ, nameSK) ->
@@ -387,7 +386,7 @@ fun RecipeScreen(
         var showAdvancedFilters by remember { mutableStateOf(false) }
 
         when (activeScreenTab) {
-            "obed", "vecere", "dezert", "piti", "alkohol" -> {
+            "obed", "vecere", "dezert", "piti" -> {
                 // Search Row with Toggle
                 Row(
                     modifier = Modifier

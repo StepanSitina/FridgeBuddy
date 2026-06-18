@@ -240,29 +240,7 @@ object LocalRecipesProvider {
             "Okurková limonáda s limetkou|Uhorková limonáda s limetkou|piti",
             "Zázvorový čaj s citronem|Zázvorový čaj s citrónom|piti",
             "Tradiční studené kakao|Tradičné studené kakao|piti",
-            "Mango lassi s kardamomem|Mango lassi s kardamónom|piti",
-
-            // Alkoholické drinky a koktejly
-            "Beton s Becherovkou a tonikem|Betón s Becherovkou a tonikom|alkohol",
-            "Božkov Cuba Libre s limetkou|Božkov Cuba Libre s limetkou|alkohol",
-            "Vodka Soda s citronem|Vodka Soda s citrónom|alkohol",
-            "Aperol Spritz se sektem|Aperol Spritz so sektom|alkohol",
-            "Gin Tonic s okurkou|Gin Tonic s uhorkou|alkohol",
-            "Mojito s bílým rumem a mátou|Mojito s bielym rumom a mätou|alkohol",
-            "Piña Colada s kokosovým mlékem|Piña Colada s kokosovým mliekom|alkohol",
-            "Whisky Sour s citronem|Whisky Sour s citrónom|alkohol",
-            "Jägermeister Mule se zázvorovým pivem|Jägermeister Mule so zázvorovým pivom|alkohol",
-            "Tatratea Citrus Highball|Tatratea Citrus Highball|alkohol",
-            "Svařené červené víno s kořením|Varené červené víno s korením|alkohol",
-            "Horký grog s rumem a citronem|Horúci grog s rumom a citrónom|alkohol",
-            "Bohemia Sekt Mimosa s pomerančem|Bohemia Sekt Mimosa s pomarančom|alkohol",
-            "Fernet s colou a citronem|Fernet s kolou a citrónom|alkohol",
-            "Radler pivní limonáda s citronem|Radler pivná limonáda s citrónom|alkohol",
-            "Espresso Martini s vodkou|Espresso Martini s vodkou|alkohol",
-            "Negroni s ginem a vermutem|Negroni s ginom a vermutom|alkohol",
-            "Paloma s tequilou a grepem|Paloma s tequilou a grepom|alkohol",
-            "Dark and Stormy s rumem|Dark and Stormy s rumom|alkohol",
-            "Kir Royal se sektem a likérem|Kir Royal so sektom a likérom|alkohol"
+            "Mango lassi s kardamomem|Mango lassi s kardamónom|piti"
         )
 
         return rawData.map { line ->
@@ -532,7 +510,7 @@ object LocalRecipesProvider {
 
             // Determine time based on category or content
             val timeValue = when {
-                category == "piti" || category == "alkohol" -> "5 min"
+                category == "piti" -> "5 min"
                 czTitle.contains("vývar") || czTitle.contains("pečen") || czTitle.contains("guláš") || czTitle.contains("bábovka") || czTitle.contains("závin") -> "45 min"
                 category == "dezert" || czTitle.contains("polévka") || czTitle.contains("krém") || czTitle.contains("pomazánka") || czTitle.contains("řízek") -> "20 min"
                 else -> "30 min"
@@ -540,7 +518,6 @@ object LocalRecipesProvider {
 
             // Determine calories & macros
             val calculatedCalories = when {
-                category == "alkohol" -> 180
                 category == "piti" -> 140
                 czTitle.contains("vývar") || czTitle.contains("polévka") || czTitle.contains("krém") || czTitle.contains("salát") -> 220
                 czTitle.contains("řízek") || czTitle.contains("sýr") || czTitle.contains("bůček") || czTitle.contains("koleno") || czTitle.contains("guláš") -> 640
@@ -556,13 +533,12 @@ object LocalRecipesProvider {
 
             val fatGauge = when {
                 czTitle.contains("bůček") || czTitle.contains("koleno") || czTitle.contains("sýr") || czTitle.contains("slanina") -> "22g"
-                czTitle.contains("polévka") || category == "piti" || category == "alkohol" -> "4g"
+                czTitle.contains("polévka") || category == "piti" -> "4g"
                 else -> "12g"
             }
 
             val carbsGauge = when {
                 category == "dezert" || czTitle.contains("knedlík") || czTitle.contains("těstoviny") || czTitle.contains("nudle") -> "48g"
-                category == "alkohol" -> "18g"
                 category == "piti" -> "22g"
                 else -> "28g"
             }
@@ -576,7 +552,6 @@ object LocalRecipesProvider {
 
             val basePrice = when {
                 czTitle.contains("hovězí") || czTitle.contains("vepřové") || czTitle.contains("pstruh") || czTitle.contains("sumec") || czTitle.contains("steak") -> 62.0
-                category == "alkohol" -> 55.0
                 category == "piti" -> 16.0
                 category == "dezert" || czTitle.contains("polévka") -> 25.0
                 else -> 38.0
@@ -649,12 +624,6 @@ object LocalRecipesProvider {
                 "3. Směs promíchávejte lžící po dobu cca 2-3 minut tak, aby se všechny chutě rovnoměrně a harmonicky propojily. Přidejte sůl, pepř a případně pár kapek citronové šťávy.\n" +
                 "4. Hotový salát nebo pomazánku přikryjte potravinovou fólií a nechte odležet v chladničce při stabilní teplotě 4-6 °C po dobu minimálně 30 až 60 minut před samotným podáváním. Servírujte s křupavým pečivem."
             }
-            category == "alkohol" -> {
-                "1. Připravte sklenici, odměrku, led a suroviny ($ingList). Sklenici nejdřív naplňte čerstvým ledem, aby se drink rychle vychladil.\n" +
-                "2. Do shakeru nebo přímo do sklenice odměřte alkoholickou složku a kyselou/sladkou část. U citrusových drinků použijte čerstvou šťávu, u perlivých drinků dolévejte tonik, sodu, colu nebo sekt až nakonec.\n" +
-                "3. Krátce promíchejte barovou lžičkou nebo protřepejte v shakeru 8-12 sekund podle typu drinku. Perlivé nápoje netřepejte, pouze jemně promíchejte.\n" +
-                "4. Ozdobte citrusovou kůrou, mátou, okurkou nebo ovocem a podávejte ihned. Alkoholické drinky jsou určeny pouze pro dospělé a mají se podávat zodpovědně."
-            }
             category == "piti" || t.contains("čaj") || t.contains("limonáda") || t.contains("džus") || t.contains("mošt") || t.contains("mojito") || t.contains("koktejl") || t.contains("smoothie") || t.contains("kakao") || t.contains("lassi") || t.contains("káva") -> {
                 "1. Připravte suché i tekuté suroviny ($ingList). Citrusy a ovoce důkladně omyjte pod tekoucí vodou, odstraňte případné pecky a vymačkejte z nich čerstvou šťávu.\n" +
                 "2. Pro studené drinky / smoothie vložte ingredience s hrstí drceného ledu do shakeru nebo mixéru a mixujte vysokou rychlostí po dobu 30-40 sekund, dokud nezískáte nadýchanou, dokonale hladkou konzistenci bez kousků.\n" +
@@ -715,12 +684,6 @@ object LocalRecipesProvider {
                 "3. Zmes premiešavajte lyžicou po dobu cca 2-3 minút tak, aby sa všetky chute rovnomerne a harmonicky prepojili. Pridajte soľ, korenie a prípadne pár kvapiek citrónovej šťavy.\n" +
                 "4. Hotový šalát alebo nátierku prikryte potravinovou fóliou a nechajte odležať v chladničke pri stabilnej teplote 4-6 °C po dobu minimálne 30 až 60 minút pred samotným podávaním. Servírujte s chrumkavým pečivom."
             }
-            category == "alkohol" -> {
-                "1. Pripravte pohár, odmerku, ľad a suroviny ($ingList). Pohár najprv naplňte čerstvým ľadom, aby sa drink rýchlo vychladil.\n" +
-                "2. Do shakeru alebo priamo do pohára odmerajte alkoholickú zložku a kyslú/sladkú časť. Pri citrusových drinkoch použite čerstvú šťavu, pri perlivých drinkoch dolievajte tonik, sódu, colu alebo sekt až nakoniec.\n" +
-                "3. Krátko premiešajte barovou lyžicou alebo pretrepte v shakeri 8-12 sekúnd podľa typu drinku. Perlivé nápoje netrepte, iba jemne premiešajte.\n" +
-                "4. Ozdobte citrusovou kôrou, mätou, uhorkou alebo ovocím a podávajte ihneď. Alkoholické drinky sú určené iba pre dospelých a majú sa podávať zodpovedne."
-            }
             category == "piti" || t.contains("čaj") || t.contains("limonáda") || t.contains("džús") || t.contains("mušt") || t.contains("mojito") || t.contains("koktejl") || t.contains("smoothie") || t.contains("kakao") || t.contains("lassi") || t.contains("káva") -> {
                 "1. Pripravte suché aj tekuté suroviny ($ingList). Citrusy a ovocie dôkladne umyte pod tečúcou vodou, odstráňte prípadné kôstky a vytlačte z nich čerstvú šťavu.\n" +
                 "2. Pre studené drinky / smoothie vložte ingrediencie s hrsťou drveného ľadu do shakeru alebo mixéra a mixujte vysokou rýchlosťou po dobu 30-40 sekúnd, kým nezískate nadýchanú, dokonale hladkú konzistenciu bez kúskov.\n" +
@@ -759,19 +722,6 @@ object LocalRecipesProvider {
         if (t.contains("tvaroh") || t.contains("žemlovka")) list.add("tvaroh")
         if (t.contains("vejce") || t.contains("vajíčková") || t.contains("lečo") || t.contains("mozek")) list.add("vejce")
         if (t.contains("káva")) list.add("káva")
-        if (t.contains("becherov")) list.add("Becherovka")
-        if (t.contains("rum") || t.contains("cuba libre") || t.contains("grog")) list.add("rum")
-        if (t.contains("vodka") || t.contains("espresso martini")) list.add("vodka")
-        if (t.contains("sekt") || t.contains("mimosa") || t.contains("kir royal") || t.contains("spritz")) list.add("sekt")
-        if (t.contains("gin") || t.contains("negroni")) list.add("gin")
-        if (t.contains("jägermeister")) list.add("Jägermeister")
-        if (t.contains("tatratea")) list.add("Tatratea")
-        if (t.contains("fernet")) list.add("Fernet")
-        if (t.contains("víno") || t.contains("svařené")) list.add("červené víno")
-        if (t.contains("tonic") || t.contains("tonik")) list.add("tonic")
-        if (t.contains("cola") || t.contains("colou")) list.add("cola")
-        if (t.contains("citron") || t.contains("limet")) list.add("citron")
-        if (t.contains("máta") || t.contains("mojito")) list.add("máta")
         if (t.contains("čaj") || t.contains("matcha") || t.contains("šípkový")) list.add("čaj")
         if (t.contains("limonáda") || t.contains("citronáda") || t.contains("džus") || t.contains("mošt") || t.contains("možito") || t.contains("mojito")) list.add("voda")
         if (t.contains("čokoláda") || t.contains("kakao")) list.add("mléko")
@@ -809,19 +759,6 @@ object LocalRecipesProvider {
         if (t.contains("tvaroh") || t.contains("žemľovka")) list.add("tvaroh")
         if (t.contains("vajc") || t.contains("nátierka") || t.contains("lečo") || t.contains("mozog")) list.add("vajce")
         if (t.contains("káva")) list.add("káva")
-        if (t.contains("becherov")) list.add("Becherovka")
-        if (t.contains("rum") || t.contains("cuba libre") || t.contains("grog")) list.add("rum")
-        if (t.contains("vodka") || t.contains("espresso martini")) list.add("vodka")
-        if (t.contains("sekt") || t.contains("mimosa") || t.contains("kir royal") || t.contains("spritz")) list.add("sekt")
-        if (t.contains("gin") || t.contains("negroni")) list.add("gin")
-        if (t.contains("jägermeister")) list.add("Jägermeister")
-        if (t.contains("tatratea")) list.add("Tatratea")
-        if (t.contains("fernet")) list.add("Fernet")
-        if (t.contains("víno") || t.contains("varené")) list.add("červené víno")
-        if (t.contains("tonic") || t.contains("tonik")) list.add("tonic")
-        if (t.contains("cola") || t.contains("kolou")) list.add("cola")
-        if (t.contains("citrón") || t.contains("limet")) list.add("citrón")
-        if (t.contains("mäta") || t.contains("mojito")) list.add("mäta")
         if (t.contains("čaj") || t.contains("matcha") || t.contains("šípkov")) list.add("čaj")
         if (t.contains("limonád") || t.contains("citrónád") || t.contains("džús") || t.contains("mušt") || t.contains("mojito")) list.add("voda")
         if (t.contains("čokolád") || t.contains("kakao")) list.add("mlieko")

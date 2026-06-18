@@ -20,9 +20,8 @@ object GeminiService {
         .readTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    // Local seed library for offline demos. Unknown real barcodes still fall back to Open Food Facts.
-    val localEanDb: Map<String, OpenFoodFactsProduct> = buildMap {
-        putAll(mapOf(
+    // Highly comprehensive library of popular Czech & Slovak EAN products and brands
+    val localEanDb = mapOf(
         // Category 1: Paštiky (Pâtés)
         "8595001231222" to OpenFoodFactsProduct("8595001231222", "Svačinka Tradiční Paštika 120g (Hamé)", 290, 8.5, 2.0, 26.5, "Pantry"),
         "8595001231233" to OpenFoodFactsProduct("8595001231233", "Matěj Pikantní Paštika 120g (Hamé)", 295, 8.2, 1.8, 27.0, "Pantry"),
@@ -226,153 +225,7 @@ object GeminiService {
         "8594112233445" to OpenFoodFactsProduct("8594112233445", "Čerstvé jahody balené 500g", 32, 0.7, 7.7, 0.3, "Fridge"),
         "8594112233452" to OpenFoodFactsProduct("8594112233452", "Vanilková zmrzlina 1l (Prima)", 180, 3.2, 21.0, 9.0, "Freezer"),
         "8594112233469" to OpenFoodFactsProduct("8594112233469", "Čokoláda na vaření 100g (Orion)", 520, 5.5, 54.0, 31.0, "Pantry")
-        ))
-        putAll(generateExpandedLocalMarketProducts())
-    }
-
-    private data class ProductSeed(
-        val name: String,
-        val brand: String,
-        val kcal: Int,
-        val protein: Double,
-        val carbs: Double,
-        val fat: Double,
-        val category: String
     )
-
-    private fun generateExpandedLocalMarketProducts(): Map<String, OpenFoodFactsProduct> {
-        val categories = listOf(
-            listOf(
-                "Hamé Májka paštika 120g" to "Hamé",
-                "Hamé Svačinka paštika 120g" to "Hamé",
-                "Hamé Matěj pikantní 120g" to "Hamé",
-                "Viva játrová paštika 150g" to "Viva",
-                "Tatrakon Tatranský krém 115g" to "Tatrakon",
-                "Albert jemná paštika 125g" to "Albert",
-                "Pikok drůbeží paštika 150g" to "Pikok",
-                "K-Classic vepřová paštika 125g" to "K-Classic"
-            ).map { (n, b) -> ProductSeed(n, b, 285, 8.5, 2.0, 26.0, "Pantry") },
-            listOf(
-                "Hamé jahodový džem 340g" to "Hamé",
-                "Hamé meruňkový džem 340g" to "Hamé",
-                "Hamé borůvkový džem 340g" to "Hamé",
-                "Schwartau Extra jahoda 340g" to "Schwartau",
-                "Nutella lískooříškový krém 350g" to "Ferrero",
-                "Lotus Biscoff pomazánka 400g" to "Lotus",
-                "Albert vajíčková pomazánka 150g" to "Albert",
-                "Pikok škvarková pomazánka 200g" to "Pikok",
-                "Giana tuňáková pomazánka 120g" to "Giana",
-                "Lučina nadýchaná 120g" to "Savencia"
-            ).map { (n, b) -> ProductSeed(n, b, if (n.contains("džem")) 245 else 320, 4.5, if (n.contains("džem")) 60.0 else 8.0, if (n.contains("džem")) 0.2 else 28.0, if (n.contains("džem") || n.contains("Nutella") || n.contains("Lotus")) "Pantry" else "Fridge") },
-            listOf(
-                "Hellmann's majonéza 405ml" to "Hellmann's",
-                "Hellmann's tatarská omáčka 405ml" to "Hellmann's",
-                "Boneco majonéza 350g" to "Boneco",
-                "Boneco tatarská omáčka 350g" to "Boneco",
-                "Spak majonéza 500ml" to "Spak",
-                "Spak tatarská omáčka 500ml" to "Spak",
-                "Vitana tatarská omáčka 240ml" to "Vitana",
-                "Kania lehká majonéza 250ml" to "Kania"
-            ).map { (n, b) -> ProductSeed(n, b, if (n.contains("tatarská")) 465 else 645, 0.7, 3.0, if (n.contains("tatarská")) 51.0 else 71.0, "Fridge") },
-            listOf(
-                "Agricol Eidam 30% plátky 100g" to "Agricol",
-                "Agricol Eidam 45% plátky 100g" to "Agricol",
-                "Agricol Gouda 48% plátky 100g" to "Agricol",
-                "Madeta Jihočeský eidam 45% 100g" to "Madeta",
-                "Madeta Jihočeská niva 110g" to "Madeta",
-                "Pilos Gouda plátky 150g" to "Pilos",
-                "Galbani Mozzarella 125g" to "Galbani",
-                "Liptov bryndza plnotučná 125g" to "Liptov",
-                "A.W. Olomoucké tvarůžky 125g" to "A.W.",
-                "Sedlčanský hermelín 100g" to "Sedlčanský"
-            ).map { (n, b) -> ProductSeed(n, b, if (n.contains("tvarůžky")) 127 else if (n.contains("Mozzarella")) 238 else 330, 22.0, 1.0, if (n.contains("tvarůžky")) 0.6 else 26.0, "Fridge") },
-            listOf(
-                "Madeta Jihočeský bílý jogurt 150g" to "Madeta",
-                "Hollandia selský jogurt bílý 200g" to "Hollandia",
-                "Olma Klasik bílý jogurt 150g" to "Olma",
-                "Milko řecký jogurt bílý 0% 150g" to "Milko",
-                "Choceňský jogurt smetanový bílý 150g" to "Choceňská mlékárna",
-                "Pilos bílý jogurt 3,5% 500g" to "Pilos",
-                "K-Classic bílý jogurt 500g" to "K-Classic"
-            ).map { (n, b) -> ProductSeed(n, b, if (n.contains("0%")) 57 else 72, if (n.contains("řecký")) 10.0 else 4.0, 5.0, if (n.contains("0%")) 0.1 else 3.0, "Fridge") },
-            listOf(
-                "Kunín smetana ke šlehání 31% 200g" to "Kunín",
-                "Kunín smetana na vaření 12% 200g" to "Kunín",
-                "Kunín zakysaná smetana 12% 200g" to "Kunín",
-                "Madeta Jihočeská smetana 33% 250g" to "Madeta",
-                "Tatra smetana na vaření 12% 250g" to "Tatra",
-                "Meggle smetana ke šlehání 30% 250ml" to "Meggle",
-                "Pilos zakysaná smetana 16% 200g" to "Pilos"
-            ).map { (n, b) -> ProductSeed(n, b, if (n.contains("31") || n.contains("33") || n.contains("30")) 300 else 135, 2.5, 4.0, if (n.contains("31") || n.contains("33") || n.contains("30")) 31.0 else 12.0, "Fridge") },
-            listOf(
-                "Albert rajčata cherry 250g" to "Albert",
-                "Albert rajčata keříková 500g" to "Albert",
-                "Tesco rajčata cherry 250g" to "Tesco",
-                "Lidl okurka hadovka 1ks" to "Lidl",
-                "Albert mini okurky 200g" to "Albert",
-                "Billa salátová okurka 1ks" to "Billa"
-            ).map { (n, b) -> ProductSeed(n, b, if (n.contains("okurka")) 15 else 21, 0.8, 4.0, 0.1, "Fridge") },
-            listOf(
-                "Panzani špagety 500g" to "Panzani",
-                "Panzani penne 500g" to "Panzani",
-                "Adriana semolinové špagety 500g" to "Adriana",
-                "Zátkovy kolínka vaječná 500g" to "Zátkovy",
-                "K-Classic fusilli 500g" to "K-Classic",
-                "Tesco tagliatelle 500g" to "Tesco",
-                "Barilla spaghetti 500g" to "Barilla",
-                "Lagris kuskus 500g" to "Lagris"
-            ).map { (n, b) -> ProductSeed(n, b, 352, 12.0, 72.0, 1.5, "Pantry") },
-            listOf(
-                "Red Bull Energy Drink 250ml" to "Red Bull",
-                "Monster Energy 500ml" to "Monster",
-                "Semtex Original 500ml" to "Semtex",
-                "Tiger Energy Drink 250ml" to "Tiger",
-                "Big Shock Original 500ml" to "Big Shock",
-                "Hell Energy Drink 250ml" to "Hell"
-            ).map { (n, b) -> ProductSeed(n, b, 46, 0.0, 11.0, 0.0, "Pantry") },
-            listOf(
-                "Pilsner Urquell ležák 500ml" to "Pilsner Urquell",
-                "Budweiser Budvar ležák 500ml" to "Budweiser Budvar",
-                "Gambrinus Originál 10 500ml" to "Gambrinus",
-                "Radegast Ryze hořká 12 500ml" to "Radegast",
-                "Staropramen ležák 500ml" to "Staropramen",
-                "Božkov Originál rum 500ml" to "Stock",
-                "Becherovka 500ml" to "Jan Becher",
-                "Fernet Stock 500ml" to "Stock",
-                "Jägermeister 500ml" to "Jägermeister",
-                "Absolut Vodka 700ml" to "Absolut",
-                "Captain Morgan Spiced Gold 700ml" to "Captain Morgan",
-                "Bohemia Sekt Demi Sec 750ml" to "Bohemia Sekt",
-                "Tatratea Original 52% 700ml" to "Tatratea"
-            ).map { (n, b) -> ProductSeed(n, b, if (n.contains("500ml") && !n.contains("rum") && !n.contains("Becherovka") && !n.contains("Fernet") && !n.contains("Jäger")) 43 else 230, 0.0, if (n.contains("ležák") || n.contains("Gambrinus") || n.contains("Radegast") || n.contains("Staropramen")) 4.0 else 8.0, 0.0, "Pantry") },
-            listOf(
-                "Vitana kulajda poctivá 450g" to "Vitana",
-                "Vitana hrachová polévka 450g" to "Vitana",
-                "Vitana gulášová polévka 450g" to "Vitana",
-                "Knorr kuřecí polévka instantní 60g" to "Knorr",
-                "Podravka hovězí vývar instantní 65g" to "Podravka",
-                "Nowaco knedlíky plněné uzeným masem 400g" to "Nowaco",
-                "Toppo halušky s bryndzou 400g" to "Toppo",
-                "Dr. Oetker Ristorante pizza 335g" to "Dr. Oetker",
-                "McCain hranolky do trouby 1kg" to "McCain"
-            ).map { (n, b) -> ProductSeed(n, b, if (n.contains("pizza")) 248 else if (n.contains("hranolky")) 145 else 105, 5.5, 18.0, 5.0, if (n.contains("pizza") || n.contains("hranolky")) "Freezer" else if (n.contains("instantní")) "Pantry" else "Fridge") }
-        ).flatten()
-
-        return categories.mapIndexed { index, seed ->
-            val code = (2000001000000L + index).toString()
-            val product = OpenFoodFactsProduct(
-                barcode = code,
-                name = "${seed.name} (${seed.brand})",
-                calories = seed.kcal,
-                protein = seed.protein,
-                carbohydrates = seed.carbs,
-                fat = seed.fat,
-                category = seed.category,
-                brand = seed.brand
-            )
-            code to normalizeNutrition(product)
-        }.toMap()
-    }
 
     // Gracefully detect if the API key is set which is configured in AI Studio Secrets tab
     private fun getApiKey(): String {
@@ -759,18 +612,7 @@ object GeminiService {
             }
         }
         val lower = name.lowercase()
-        val brands = listOf(
-            "madeta", "olma", "sedita", "opavia", "kunín", "hamé", "kofola", "rajec", "pribina",
-            "savencia", "milko", "orion", "ferrero", "galbani", "liptov", "hellmann's", "agricol",
-            "albert", "tesco", "lidl", "billa", "penny", "chodura", "pikok", "dulano", "kmotr",
-            "nowaco", "giana", "valfrutta", "teekanne", "medokomerc", "prima", "dr. oetker",
-            "birell", "red bull", "monster", "semtex", "tiger", "bohemia", "pilsner urquell",
-            "gambrinus", "radegast", "budweiser", "staropramen", "tatra", "lukana", "agrofert",
-            "tatrakon", "hollandia", "choceň", "choceňská", "pilos", "k-classic", "zátkovy",
-            "adriana", "panzani", "barilla", "lagris", "spak", "boneco", "vitana", "stock",
-            "jan becher", "jägermeister", "absolut", "captain morgan", "tatratea", "big shock",
-            "hell", "knorr", "podravka", "toppo", "mccain", "meggle", "schwartau", "lotus"
-        )
+        val brands = listOf("madeta", "olma", "sedita", "opavia", "kunín", "hamé", "kofola", "rajec", "pribina", "savencia", "milko", "orion", "ferrero", "galbani", "liptov", "hellmann's", "agricol", "albert", "tesco", "lidl", "billa", "penny", "chodura", "pikok", "dulano", "kmotr", "nowaco", "giana", "valfrutta", "teekanne", "medokomerc", "prima", "dr. oetker", "birell", "red bull", "monster", "semtex", "tiger", "bohemia", "pilsner urquell", "gambrinus", "radegast", "budweiser", "staropramen", "tatra", "savencia", "tatra", "lukana", "agrofert", "tatrakon")
         for (b in brands) {
             if (lower.contains(b)) {
                 return b.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
@@ -779,41 +621,12 @@ object GeminiService {
         return null
     }
 
-    private fun normalizeNutrition(product: OpenFoodFactsProduct): OpenFoodFactsProduct {
-        val cleanProtein = product.protein.coerceIn(0.0, 100.0)
-        val cleanCarbs = product.carbohydrates.coerceIn(0.0, 100.0)
-        val cleanFat = product.fat.coerceIn(0.0, 100.0)
-        val macroKcal = (cleanProtein * 4.0 + cleanCarbs * 4.0 + cleanFat * 9.0).toInt()
-        val lowerName = product.name.lowercase()
-        val isAlcohol = listOf(
-            "pivo", "ležák", "rum", "vodka", "becherovka", "fernet", "jägermeister",
-            "sekt", "víno", "tatratea", "borovička", "captain morgan", "božkov"
-        ).any { lowerName.contains(it) }
-
-        val fixedCalories = when {
-            product.calories < 0 -> 0
-            product.calories == 0 && macroKcal > 0 -> macroKcal
-            !isAlcohol && macroKcal > 0 && product.calories < (macroKcal * 0.65).toInt() -> macroKcal
-            product.calories > 900 -> 900
-            else -> product.calories
-        }
-
-        val brand = product.brand?.takeIf { it.isNotBlank() } ?: extractBrandFromName(product.name)
-        return product.copy(
-            calories = fixedCalories,
-            protein = Math.round(cleanProtein * 10.0) / 10.0,
-            carbohydrates = Math.round(cleanCarbs * 10.0) / 10.0,
-            fat = Math.round(cleanFat * 10.0) / 10.0,
-            brand = brand
-        )
-    }
-
     suspend fun fetchOpenFoodFactsProduct(barcode: String, isSlovak: Boolean): OpenFoodFactsProduct? = withContext(Dispatchers.IO) {
         val trimmedCode = barcode.trim()
         val localProduct = localEanDb[trimmedCode]
         if (localProduct != null) {
             val brand = localProduct.brand ?: extractBrandFromName(localProduct.name)
-            return@withContext normalizeNutrition(localProduct.copy(brand = brand))
+            return@withContext localProduct.copy(brand = brand)
         }
 
         val url = "https://world.openfoodfacts.org/api/v2/product/$trimmedCode.json"
@@ -869,7 +682,7 @@ object GeminiService {
                 val brandField = product.optString("brands").trim()
                 val brand = if (brandField.isNotEmpty() && brandField != "null") brandField else extractBrandFromName(name)
                 
-                normalizeNutrition(OpenFoodFactsProduct(
+                OpenFoodFactsProduct(
                     barcode = barcode,
                     name = name,
                     calories = kcal.toInt(),
@@ -878,7 +691,7 @@ object GeminiService {
                     fat = fat,
                     category = determinedCategory,
                     brand = brand
-                ))
+                )
             }
         } catch (e: Exception) {
             e.printStackTrace()
