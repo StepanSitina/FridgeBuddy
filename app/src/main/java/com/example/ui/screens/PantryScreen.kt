@@ -96,6 +96,7 @@ fun PantryScreen(
     
     // Currently Scanned Food Details
     var scannedFoodName by remember { mutableStateOf("") }
+    var scannedFoodBrand by remember { mutableStateOf<String?>(null) }
     var scannedFoodCalories by remember { mutableStateOf(100) }
     var scannedFoodProtein by remember { mutableStateOf("5g") }
     var scannedFoodCarbs by remember { mutableStateOf("12g") }
@@ -545,6 +546,7 @@ fun PantryScreen(
                                                     val result = viewModel.fetchBarcodeProduct(barcode)
                                                     if (result != null) {
                                                         scannedFoodName = result.name
+                                                        scannedFoodBrand = result.brand
                                                         scannedFoodCalories = result.calories
                                                         scannedFoodProtein = "${result.protein}g"
                                                         scannedFoodCarbs = "${result.carbohydrates}g"
@@ -631,6 +633,7 @@ fun PantryScreen(
                                                 val result = viewModel.fetchBarcodeProduct(typedBarcode)
                                                 if (result != null) {
                                                     scannedFoodName = result.name
+                                                    scannedFoodBrand = result.brand
                                                     scannedFoodCalories = result.calories
                                                     scannedFoodProtein = "${result.protein}g"
                                                     scannedFoodCarbs = "${result.carbohydrates}g"
@@ -767,6 +770,21 @@ fun PantryScreen(
                             color = FreshGreenPrimary
                         )
 
+                        scannedFoodBrand?.takeIf { it.isNotBlank() }?.let { brand ->
+                            Box(
+                                modifier = Modifier
+                                    .background(SaffronGoldSecondary.copy(alpha = 0.14f), RoundedCornerShape(8.dp))
+                                    .padding(horizontal = 10.dp, vertical = 4.dp)
+                            ) {
+                                Text(
+                                    text = (if (isSlovak) "Značka: " else "Značka: ") + brand,
+                                    color = SaffronGoldSecondary,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+
                         Box(
                             modifier = Modifier
                                 .background(SoftGreenGlow, RoundedCornerShape(12.dp))
@@ -805,8 +823,12 @@ fun PantryScreen(
 
                         Button(
                             onClick = {
+                                val storedName = scannedFoodBrand
+                                    ?.takeIf { it.isNotBlank() && !scannedFoodName.contains(it, ignoreCase = true) }
+                                    ?.let { "$scannedFoodName ($it)" }
+                                    ?: scannedFoodName
                                 viewModel.addManualPantryItem(
-                                    scannedFoodName,
+                                    storedName,
                                     "1 ks",
                                     scannedFoodCategory,
                                     7,
