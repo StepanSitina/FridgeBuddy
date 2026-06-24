@@ -30,7 +30,8 @@ data class UserEntity(
     @PrimaryKey val email: String, // ensures max 1 account per email naturally in SQLite table constraint
     val nickname: String,
     val passwordHash: String, // securely hashed password
-    val salt: String
+    val salt: String,
+    val pairingCode: String? = null
 )
 
 @Entity(tableName = "pantry_items")
@@ -74,6 +75,17 @@ data class ShoppingItem(
     val currency: String = "CZK"
 )
 
+@Entity(tableName = "scan_history")
+data class ScanHistoryItem(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val name: String,
+    val barcode: String,
+    val category: String,
+    val approxPrice: Double = 0.0,
+    val currency: String = "CZK",
+    val timestamp: Long = System.currentTimeMillis()
+)
+
 // --- DAOs ---
 
 @Dao
@@ -114,6 +126,21 @@ interface FridgeBuddyDao {
     @Delete
     suspend fun deleteShoppingItem(item: ShoppingItem)
 
+    @Query("SELECT * FROM scan_history ORDER BY timestamp DESC")
+    fun getAllScanHistory(): Flow<List<ScanHistoryItem>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertScanHistoryItem(item: ScanHistoryItem)
+
+    @Delete
+    suspend fun deleteScanHistoryItem(item: ScanHistoryItem)
+
+    @Query("DELETE FROM scan_history WHERE id = :id")
+    suspend fun deleteScanHistoryItemById(id: Int)
+
+    @Query("DELETE FROM scan_history")
+    suspend fun clearScanHistory()
+
     @Query("DELETE FROM pantry_items")
     suspend fun clearPantryItems()
 
@@ -126,15 +153,15 @@ interface FridgeBuddyDao {
     @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
     suspend fun getUserByEmail(email: String): UserEntity?
 
-    @Insert(onConflict = OnConflictStrategy.ABORT)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertUser(user: UserEntity)
 }
 
 // --- Database Wrapper & Room Initialization with Prepopulation callbacks ---
 
 @Database(
-    entities = [PantryItem::class, MealLog::class, ConfigEntity::class, ShoppingItem::class, UserEntity::class],
-    version = 2,
+    entities = [PantryItem::class, MealLog::class, ConfigEntity::class, ShoppingItem::class, UserEntity::class, ScanHistoryItem::class],
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -166,6 +193,7 @@ class FridgeBuddyRepository(private val dao: FridgeBuddyDao) {
     val allPantryItems: Flow<List<PantryItem>> = dao.getAllPantryItems()
     val allMealLogs: Flow<List<MealLog>> = dao.getAllMealLogs()
     val allShoppingItems: Flow<List<ShoppingItem>> = dao.getAllShoppingItems()
+    val allScanHistory: Flow<List<ScanHistoryItem>> = dao.getAllScanHistory()
 
     suspend fun getUserByEmail(email: String): UserEntity? {
         return dao.getUserByEmail(email)
@@ -211,9 +239,22 @@ class FridgeBuddyRepository(private val dao: FridgeBuddyDao) {
         dao.deleteShoppingItem(item)
     }
 
+    suspend fun addScanHistoryItem(item: ScanHistoryItem) {
+        dao.insertScanHistoryItem(item)
+    }
+
+    suspend fun removeScanHistoryItem(item: ScanHistoryItem) {
+        dao.deleteScanHistoryItem(item)
+    }
+
+    suspend fun removeScanHistoryItemById(id: Int) {
+        dao.deleteScanHistoryItemById(id)
+    }
+
     suspend fun clearAllData() {
         dao.clearPantryItems()
         dao.clearMealLogs()
         dao.clearShoppingItems()
+        dao.clearScanHistory()
     }
 }

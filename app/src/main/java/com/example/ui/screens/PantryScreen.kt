@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -12,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -21,7 +23,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -54,6 +58,7 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import java.util.concurrent.Executors
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun PantryScreen(
     viewModel: FridgeBuddyViewModel,
@@ -62,6 +67,7 @@ fun PantryScreen(
 ) {
     val isSlovak by viewModel.isSlovak.collectAsState()
     val pantryItems by viewModel.pantryItems.collectAsState()
+    val scanHistory by viewModel.scanHistory.collectAsState()
     val isAiLoading by viewModel.isAiLoading.collectAsState()
     val scope = rememberCoroutineScope()
 
@@ -70,9 +76,14 @@ fun PantryScreen(
     var typedBarcode by remember { mutableStateOf("") }
     var isSearchLoading by remember { mutableStateOf(false) }
     var scanErrorText by remember { mutableStateOf<String?>(null) }
+    var activeBarcodeCode by remember { mutableStateOf("") }
+    var showScanHistory by remember { mutableStateOf(false) }
 
     var activePantryTab by remember { mutableStateOf("Všetko") } // Všetko, Lednice/Chladnička, Mrazák, Spižírna
     var showAddItemDialog by remember { mutableStateOf(false) }
+    var showScannerOptionsSheet by remember { mutableStateOf(false) }
+
+    var itemToSuggestShopping by remember { mutableStateOf<PantryItem?>(null) }
 
     // Forms
     var manualName by remember { mutableStateOf("") }
@@ -83,8 +94,24 @@ fun PantryScreen(
 
     // Direct Camera Scanner State
     var showCameraSimulator by remember { mutableStateOf(false) }
+    
+    var showUnknownProductDialog by remember { mutableStateOf(false) }
+    var unknownBarcode by remember { mutableStateOf("") }
+    var unknownDetectedName by remember { mutableStateOf("") }
 
     val context = LocalContext.current
+    val sharedPrefs = remember { context.getSharedPreferences("fridgebuddy_prefs", android.content.Context.MODE_PRIVATE) }
+    var isTooltipVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        val hasSeenTooltip = sharedPrefs.getBoolean("pantry_tooltip_seen", false)
+        if (!hasSeenTooltip) {
+            isTooltipVisible = true
+            sharedPrefs.edit().putBoolean("pantry_tooltip_seen", true).apply()
+            kotlinx.coroutines.delay(5000)
+            isTooltipVisible = false
+        }
+    }
 
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -105,6 +132,7 @@ fun PantryScreen(
     var scannedFoodEmoji by remember { mutableStateOf("🍏") }
     
     var showScanResultDialog by remember { mutableStateOf(false) }
+    var scanResultPiecesToAdd by remember(showScanResultDialog) { mutableStateOf(1) }
     var isCameraCountingDown by remember { mutableStateOf(false) }
 
     // Multi-Language Strings
@@ -131,219 +159,474 @@ fun PantryScreen(
             .fillMaxSize()
             .background(DarkBg)
     ) {
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .windowInsetsPadding(WindowInsets.safeDrawing),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-        // 1. Cozy header banner image with transparent overlay
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(130.dp)
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.img_pantry_banner),
-                contentDescription = "Pantry background",
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
-            // dark filter overlay
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(FreshGreenPrimary.copy(alpha = 0.5f))
-            )
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.Bottom
-            ) {
-                Text(
-                    text = titleText,
-                    color = CreamText,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = headerDesc,
-                    color = CreamText.copy(alpha = 0.8f),
-                    fontSize = 12.sp
-                )
-            }
-        }
-
-        // 2. Intelligent inputs trigger row (Receipt Scanning, Voice Dictation, Camera)
-        Card(
-            colors = CardDefaults.cardColors(containerColor = NavBgNatural),
-            shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, BorderNatural),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 10.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Text(
-                    text = if (isSlovak) "✨ Rýchli AI Pomocníci" else "✨ Rychlí AI Pomocníci",
-                    color = FreshGreenPrimary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
-                )
-                
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = SaffronGoldSecondary.copy(alpha = 0.12f)),
-                    border = BorderStroke(1.dp, SaffronGoldSecondary.copy(alpha = 0.5f)),
-                    shape = RoundedCornerShape(10.dp),
+            item {
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onNavigateToTab?.invoke("scanner") }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier.padding(10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.DocumentScanner,
-                            contentDescription = "Real OCR Skener",
-                            tint = SaffronGoldSecondary,
-                            modifier = Modifier.size(24.dp)
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = if (isSlovak) "Spíž & Lednice" else "Spíž & Lednice",
+                            color = CreamText,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold
                         )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = if (isSlovak) "Vyskúšajte Možnosť A" else "Vyzkoušejte Možnost A",
-                                color = SaffronGoldSecondary,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp
-                            )
-                            Text(
-                                text = if (isSlovak) "Reálny skener s OCR na automatické rozpoznávanie nákupov!" else "Reálný skener s OCR pro automatické rozpoznávání nákupů!",
-                                color = CreamText.copy(alpha = 0.82f),
-                                fontSize = 11.sp,
-                                lineHeight = 14.sp
-                            )
-                        }
-                        Icon(
-                            imageVector = Icons.Default.ChevronRight,
-                            contentDescription = "Forward",
-                            tint = SaffronGoldSecondary.copy(alpha = 0.7f),
-                            modifier = Modifier.size(16.dp)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = if (isSlovak) "Inteligentná správa potravín" else "Inteligentní správa potravin",
+                            color = CreamText.copy(alpha = 0.5f),
+                            fontSize = 11.sp
                         )
                     }
-                }
-                
-                // Camera Scanner Button (extremely visible & prominent)
-                IconButtonCard(
-                    onClick = {
-                        val isCameraPermissionGranted = ContextCompat.checkSelfPermission(
-                            context,
-                            Manifest.permission.CAMERA
-                        ) == PackageManager.PERMISSION_GRANTED
-
-                        if (isCameraPermissionGranted) {
-                            showBarcodeScanner = true
-                        } else {
-                            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                    
+                    // Compact History trigger in the top right to save premium space
+                    IconButton(
+                        onClick = { showScanHistory = true },
+                        modifier = Modifier
+                            .background(LightSurface, RoundedCornerShape(8.dp))
+                            .size(38.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.TopEnd) {
+                            Icon(
+                                imageVector = Icons.Default.History,
+                                contentDescription = if (isSlovak) "História" else "Historie",
+                                tint = SaffronGoldSecondary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            if (scanHistory.isNotEmpty()) {
+                                Box(
+                                    modifier = Modifier
+                                        .offset(x = 3.dp, y = (-3).dp)
+                                        .background(FreshGreenPrimary, CircleShape)
+                                        .size(8.dp)
+                                )
+                            }
                         }
-                    },
-                    icon = Icons.Default.QrCodeScanner,
-                    label = if (isSlovak) "EAN Skener čiarových kódov" else "EAN Skener čárových kódů",
-                    modifier = Modifier.fillMaxWidth().testTag("button_camera_scanner")
-                )
-            }
-        }
-
-
-
-        // 3. Category Filter tabs (All, Fridge, Freezer, Pantry)
-        TabRow(
-            selectedTabIndex = when (activePantryTab) {
-                tabAllLabel -> 0
-                categoryLabelFridge -> 1
-                categoryLabelFreezer -> 2
-                categoryLabelPantry -> 3
-                else -> 0
-            },
-            containerColor = NavBgNatural,
-            contentColor = FreshGreenPrimary,
-            divider = { Divider(color = BorderNatural) }
-        ) {
-            val tabs = listOf(tabAllLabel, categoryLabelFridge, categoryLabelFreezer, categoryLabelPantry)
-            tabs.forEach { tab ->
-                Tab(
-                    selected = activePantryTab == tab,
-                    onClick = { activePantryTab = tab },
-                    text = { Text(tab, fontWeight = FontWeight.SemiBold, fontSize = 12.sp) },
-                    selectedContentColor = FreshGreenPrimary,
-                    unselectedContentColor = SaffronGoldSecondary
-                )
-            }
-        }
-
-        // 4. Pantry lazy column list with vertical green/orange/red traffic border
-        if (filteredPantryItems.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .padding(24.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Icon(
-                        Icons.Default.Inbox,
-                        contentDescription = "Empty",
-                        tint = CreamText.copy(alpha = 0.2f),
-                        modifier = Modifier.size(64.dp)
-                    )
-                    Text(
-                        text = if (isSlovak) "Žiadne sedia v tejto sekcii" else "Žádné potraviny v této sekci",
-                        color = CreamText.copy(alpha = 0.5f),
-                        fontSize = 14.sp
-                    )
-                    Text(
-                        text = if (isSlovak) "Pridajte položku manuálne alebo naskenujte účtenku." else "Přidejte položku manuálně nebo naskenujte účtenku.",
-                        color = CreamText.copy(alpha = 0.3f),
-                        fontSize = 12.sp,
-                        textAlign = TextAlign.Center
-                    )
+                    }
                 }
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
+
+
+                        
+
+                        
+
+
+
+
+            stickyHeader {
+                // 3. Category Filter tabs
+                Surface(
+                    color = DarkBg,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    TabRow(
+                        selectedTabIndex = when (activePantryTab) {
+                            tabAllLabel -> 0
+                            categoryLabelFridge -> 1
+                            categoryLabelFreezer -> 2
+                            categoryLabelPantry -> 3
+                            else -> 0
+                        },
+                        containerColor = NavBgNatural,
+                        contentColor = FreshGreenPrimary,
+                        divider = { Divider(color = BorderNatural) }
+                    ) {
+                        val tabs = listOf(tabAllLabel, categoryLabelFridge, categoryLabelFreezer, categoryLabelPantry)
+                        tabs.forEach { tab ->
+                            Tab(
+                                selected = activePantryTab == tab,
+                                onClick = { activePantryTab = tab },
+                                text = { Text(tab, fontWeight = FontWeight.SemiBold, fontSize = 12.sp) },
+                                selectedContentColor = FreshGreenPrimary,
+                                unselectedContentColor = SaffronGoldSecondary
+                            )
+                        }
+                    }
+                }
+            }
+
+            // 4. Pantry items
+            if (filteredPantryItems.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Kitchen,
+                                contentDescription = "Empty",
+                                tint = CreamText.copy(alpha = 0.2f),
+                                modifier = Modifier.size(80.dp)
+                            )
+                            Text(
+                                text = if (isSlovak) "Zatiaľ tu nič nie je." else "Zatím tu nic není.",
+                                color = CreamText.copy(alpha = 0.7f),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = if (isSlovak) "Klikni na + a pridaj prvú surovinu, alebo naskenuj QR kód rodiny." 
+                                     else "Klikni na + a přidej první surovinu, nebo naskenuj QR kód rodiny.",
+                                color = CreamText.copy(alpha = 0.5f),
+                                fontSize = 13.sp,
+                                textAlign = TextAlign.Center,
+                                lineHeight = 18.sp
+                            )
+                        }
+                    }
+                }
+            } else {
                 items(filteredPantryItems) { item ->
-                    PantryItemCard(
+                    ProductCard(
                         item = item,
-                        onDelete = { viewModel.deleteItem(item) },
+                        onDelete = { itemToSuggestShopping = item },
                         isSlovak = isSlovak
                     )
                 }
             }
         }
 
-        } // Close primary scrollable/structural Column content
-
-        // 5. FAB Floating Action Button to add item manually (floats cleanly above list)
-        FloatingActionButton(
-            onClick = { showAddItemDialog = true },
-            containerColor = SaffronGoldSecondary,
-            contentColor = Color.Black,
+        // 5. FAB Floating Action Button context holding tooltip
+        Box(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp)
-                .testTag("add_pantry_fab")
         ) {
-            Icon(Icons.Default.Add, contentDescription = "Manual add")
+            Column(horizontalAlignment = Alignment.End) {
+                if (isTooltipVisible) {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = TomatoRedTertiary),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .widthIn(max = 200.dp)
+                            .padding(bottom = 8.dp)
+                            .clickable { isTooltipVisible = false }
+                    ) {
+                        Text(
+                            text = if (isSlovak) "Tu môžeš naskenovať suroviny alebo QR kód domácnosti!" else "Zde můžeš naskenovat suroviny nebo QR kód domácnosti!",
+                            color = DarkBg,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
+                }
+                FloatingActionButton(
+                    onClick = { showScannerOptionsSheet = true },
+                    containerColor = FreshGreenPrimary,
+                    contentColor = Color.Black,
+                    modifier = Modifier.testTag("add_pantry_fab")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.QrCodeScanner,
+                        contentDescription = if (isSlovak) "Skenovanie a pridanie" else "Skenování a přidání",
+                        tint = Color.Black,
+                        modifier = Modifier.size(26.dp)
+                    )
+                }
+            }
+        }
+
+        // --- Smart Scanner & Add Options Sheet ---
+        if (showScannerOptionsSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showScannerOptionsSheet = false },
+                containerColor = DarkSurface,
+                dragHandle = { BottomSheetDefaults.DragHandle(color = BorderNatural) }
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .padding(bottom = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = if (isSlovak) "Možnosti pridania a skenovania" else "Možnosti přidání a skenování",
+                        color = FreshGreenPrimary,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+
+                    // 1. EAN Barcode Camera Scanner (Direct ML Kit Camera)
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = LightSurface),
+                        border = BorderStroke(1.dp, BorderNatural),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                showScannerOptionsSheet = false
+                                val isCameraPermissionGranted = ContextCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.CAMERA
+                                ) == PackageManager.PERMISSION_GRANTED
+                                if (isCameraPermissionGranted) {
+                                    showBarcodeScanner = true
+                                } else {
+                                    cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                                }
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.QrCodeScanner,
+                                contentDescription = "EAN Scanner",
+                                tint = SaffronGoldSecondary,
+                                modifier = Modifier.size(28.dp)
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column {
+                                Text(
+                                    text = if (isSlovak) "EAN Skener čiarových kódov" else "EAN Skener čárových kódů",
+                                    color = CreamText,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp
+                                )
+                                Text(
+                                    text = if (isSlovak) "Rýchle skenovanie kódov potravín kamerou" else "Rychlé skenování kódů potravin kamerou",
+                                    color = CreamText.copy(alpha = 0.6f),
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                    }
+
+                    // 2. OCR Skener účteniek / Voice Dictation
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = LightSurface),
+                        border = BorderStroke(1.dp, BorderNatural),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                showScannerOptionsSheet = false
+                                onNavigateToTab?.invoke("scanner")
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.DocumentScanner,
+                                contentDescription = "OCR / AI Scanner",
+                                tint = FreshGreenPrimary,
+                                modifier = Modifier.size(28.dp)
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column {
+                                Text(
+                                    text = if (isSlovak) "OCR Skener Účteniek & AI / Hlas" else "OCR Skener Účtenek & AI / Hlas",
+                                    color = CreamText,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp
+                                )
+                                Text(
+                                    text = if (isSlovak) "Rozpoznanie celého nákupu z fotky alebo hlasom" else "Rozpoznání celého nákupu z fotky nebo hlasem",
+                                    color = CreamText.copy(alpha = 0.6f),
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                    }
+
+                    // 3. Manual Add Dialog
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = LightSurface),
+                        border = BorderStroke(1.dp, BorderNatural),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                showScannerOptionsSheet = false
+                                showAddItemDialog = true
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Manual Add",
+                                tint = SaffronGoldSecondary,
+                                modifier = Modifier.size(28.dp)
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column {
+                                Text(
+                                    text = if (isSlovak) "Ručné pridanie potraviny" else "Ruční přidání potraviny",
+                                    color = CreamText,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp
+                                )
+                                Text(
+                                    text = if (isSlovak) "Zadajte názov, expiráciu a detaily ručne" else "Zadejte název, expiraci a detaily ručně",
+                                    color = CreamText.copy(alpha = 0.6f),
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // --- Scan History Bottom Sheet ---
+        if (showScanHistory) {
+            ModalBottomSheet(
+                onDismissRequest = { showScanHistory = false },
+                containerColor = DarkSurface,
+                dragHandle = { BottomSheetDefaults.DragHandle(color = BorderNatural) }
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .padding(bottom = 32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = if (isSlovak) "História rodinnej chladničky" else "Historie rodinné lednice",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+
+                    if (scanHistory.isEmpty()) {
+                        Text(
+                            text = if (isSlovak) "Zatiaľ tu nič nie je." else "Zatím tu nic není.",
+                            color = CreamText.copy(alpha = 0.5f),
+                            modifier = Modifier.padding(vertical = 24.dp)
+                        )
+                    } else {
+                        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(scanHistory.take(20)) { item ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(DarkBg, RoundedCornerShape(8.dp))
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = item.name,
+                                            color = CreamText,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 14.sp
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Text(
+                                                text = "EAN: ${item.barcode}",
+                                                color = CaptionTextNatural,
+                                                fontSize = 11.sp
+                                            )
+                                            Box(
+                                                modifier = Modifier
+                                                    .background(SoftGreenGlow, RoundedCornerShape(4.dp))
+                                                    .padding(horizontal = 4.dp, vertical = 1.dp)
+                                            ) {
+                                                Text(
+                                                    text = item.category,
+                                                    fontSize = 9.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = FreshGreenPrimary
+                                                )
+                                            }
+                                        }
+                                    }
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        // "Add another piece" action
+                                        IconButton(
+                                            onClick = {
+                                                viewModel.addManualPantryItem(
+                                                    item.name, "1 ks", item.category, 7, item.approxPrice
+                                                )
+                                            },
+                                            modifier = Modifier.size(40.dp).background(FreshGreenPrimary.copy(alpha=0.15f), CircleShape)
+                                        ) {
+                                            Icon(Icons.Default.Add, contentDescription = "Add", tint = FreshGreenPrimary, modifier = Modifier.size(20.dp))
+                                        }
+
+                                        // "Remove Scan history" action
+                                        IconButton(
+                                            onClick = { viewModel.removeScanHistoryItem(item.id) },
+                                            modifier = Modifier.size(40.dp).background(TomatoRedTertiary.copy(alpha=0.15f), CircleShape)
+                                        ) {
+                                            Icon(Icons.Default.Delete, contentDescription = "Delete", tint = TomatoRedTertiary, modifier = Modifier.size(18.dp))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // --- Low Stock Suggestion Dialog ---
+        if (itemToSuggestShopping != null) {
+            AlertDialog(
+                onDismissRequest = { 
+                    viewModel.deleteItem(itemToSuggestShopping!!)
+                    itemToSuggestShopping = null 
+                },
+                title = { Text(if (isSlovak) "Došli zásoby?" else "Došly zásoby?", color = CreamText, fontWeight = FontWeight.Bold) },
+                text = { Text(if (isSlovak) "Chcete pridať ${itemToSuggestShopping!!.name} do nákupného zoznamu (Nízky stav / 0 ks)?" else "Chcete přidat ${itemToSuggestShopping!!.name} na nákupní seznam (Nízký stav / 0 ks)?", color = CreamText) },
+                containerColor = DarkSurface,
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            viewModel.addShoppingItem(itemToSuggestShopping!!.name, "1 ks", "Lidl", itemToSuggestShopping!!.approxPrice)
+                            viewModel.deleteItem(itemToSuggestShopping!!)
+                            itemToSuggestShopping = null
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = FreshGreenPrimary)
+                    ) {
+                        Text(if (isSlovak) "Áno, pridať do nákupu" else "Ano, přidat do nákupu", color = Color.White)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        viewModel.deleteItem(itemToSuggestShopping!!)
+                        itemToSuggestShopping = null
+                    }) {
+                        Text(if (isSlovak) "Len vymazať" else "Jen vymazat", color = SaffronGoldSecondary)
+                    }
+                }
+            )
         }
 
         // --- Manual Add Item Dialog Dialog ---
@@ -544,6 +827,7 @@ fun PantryScreen(
                                                 try {
                                                     val result = viewModel.fetchBarcodeProduct(barcode)
                                                     if (result != null) {
+                                                        activeBarcodeCode = barcode
                                                         scannedFoodName = result.name
                                                         scannedFoodCalories = result.calories
                                                         scannedFoodProtein = "${result.protein}g"
@@ -570,6 +854,8 @@ fun PantryScreen(
                                                         showScanResultDialog = true
                                                     } else {
                                                         scanErrorText = if (isSlovak) "Kód $barcode nebol v databázi nájdený." else "Kód $barcode nebyl v databázi nalezen."
+                                                        unknownBarcode = barcode
+                                                        showUnknownProductDialog = true
                                                     }
                                                 } catch (e: Exception) {
                                                     scanErrorText = "Chyba: ${e.message}"
@@ -630,6 +916,7 @@ fun PantryScreen(
                                             try {
                                                 val result = viewModel.fetchBarcodeProduct(typedBarcode)
                                                 if (result != null) {
+                                                    activeBarcodeCode = typedBarcode
                                                     scannedFoodName = result.name
                                                     scannedFoodCalories = result.calories
                                                     scannedFoodProtein = "${result.protein}g"
@@ -656,6 +943,8 @@ fun PantryScreen(
                                                     showScanResultDialog = true
                                                 } else {
                                                     scanErrorText = if (isSlovak) "EAN $typedBarcode nebol v databázi nájdený." else "EAN $typedBarcode nebyl v databázi nalezen."
+                                                    unknownBarcode = typedBarcode
+                                                    showUnknownProductDialog = true
                                                 }
                                             } catch (e: Exception) {
                                                 scanErrorText = "Chyba: ${e.message}"
@@ -803,13 +1092,81 @@ fun PantryScreen(
 
                         HorizontalDivider(color = BorderNatural)
 
+                        // Chosen pieces custom counter selector
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(DarkBg, RoundedCornerShape(12.dp))
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (isSlovak) "Počet kusov k pridaniu" else "Počet kusů k přidání",
+                                color = CreamText,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                IconButton(
+                                    onClick = { if (scanResultPiecesToAdd > 1) scanResultPiecesToAdd-- },
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .background(Color(0xFF2D312E), CircleShape)
+                                        .testTag("pieces_minus_btn")
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Remove,
+                                        contentDescription = "Minus",
+                                        tint = SaffronGoldSecondary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                                Text(
+                                    text = "$scanResultPiecesToAdd ks",
+                                    color = CreamText,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp,
+                                    modifier = Modifier.testTag("pieces_count_text")
+                                )
+                                IconButton(
+                                    onClick = { scanResultPiecesToAdd++ },
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .background(Color(0xFF2D312E), CircleShape)
+                                        .testTag("pieces_plus_btn")
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = "Plus",
+                                        tint = SaffronGoldSecondary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        HorizontalDivider(color = BorderNatural)
+
                         Button(
                             onClick = {
-                                viewModel.addManualPantryItem(
+                                repeat(scanResultPiecesToAdd) {
+                                    viewModel.addManualPantryItem(
+                                        scannedFoodName,
+                                        "1 ks",
+                                        scannedFoodCategory,
+                                        7,
+                                        scannedFoodPrice
+                                    )
+                                }
+                                // Sken úspěšně ověřen -> zapíšeme do historie!
+                                viewModel.addScanHistoryItem(
                                     scannedFoodName,
-                                    "1 ks",
+                                    activeBarcodeCode.ifEmpty { "8594008124117" },
                                     scannedFoodCategory,
-                                    7,
                                     scannedFoodPrice
                                 )
                                 showScanResultDialog = false
@@ -831,18 +1188,73 @@ fun PantryScreen(
                 }
             }
         }
+
+        if (showUnknownProductDialog) {
+            UnknownProductHandler(
+                initialName = unknownDetectedName,
+                barcode = unknownBarcode,
+                onDismiss = {
+                    showUnknownProductDialog = false
+                    unknownBarcode = ""
+                    unknownDetectedName = ""
+                }
+            )
+        }
     }
 }
 
+/**
+ * INTELIGENTNÍ SYSTÉM IKON (Dynamic Asset Mapping)
+ * Přiřadí realistickou, moderní ikonu na základě názvu suroviny.
+ * 
+ * DESIGN TIP (Custom Vectors): Chcete-li použít vlastní vektorové sady ze složky res/drawable,
+ * nahraďte 'rememberVectorPainter(image = ...)' za 'painterResource(id = R.drawable.vlastni_ikona)'.
+ */
 @Composable
-fun PantryItemCard(
+fun getIconForProduct(productName: String): Painter {
+    val lowercase = productName.lowercase()
+    val icon = when {
+        // Pokud je produkt "Camembert" nebo "Sýr", přiřadí ikonu sýra
+        lowercase.contains("sýr") || lowercase.contains("syr") || lowercase.contains("camembert") || lowercase.contains("hermelín") || lowercase.contains("cheese") || lowercase.contains("bryndz") || lowercase.contains("eidam") || lowercase.contains("goda") || lowercase.contains("gouda") || lowercase.contains("tvaroh") -> {
+            Icons.Default.BreakfastDining // REPRESENTACE SÝRA / MLÉČNÉ SNÍDANĚ
+        }
+        // Pokud "Šunka" ou "Maso", přiřadí ikonu masa
+        lowercase.contains("maso") || lowercase.contains("meat") || lowercase.contains("šunka") || lowercase.contains("sunka") || lowercase.contains("párky") || lowercase.contains("parky") || lowercase.contains("klobás") || lowercase.contains("salám") || lowercase.contains("bůček") || lowercase.contains("hovězí") || lowercase.contains("vepřové") || lowercase.contains("kuřecí") || lowercase.contains("steak") -> {
+            Icons.Default.Restaurant // REPRESENTACE MASA / RESTAURACE
+        }
+        // Pokud "Mléko/Smetana", přiřadí ikonu mléčného výrobku
+        lowercase.contains("mléko") || lowercase.contains("mlieko") || lowercase.contains("smetana") || lowercase.contains("smotana") || lowercase.contains("jogurt") || lowercase.contains("milk") || lowercase.contains("kefír") || lowercase.contains("kefir") || lowercase.contains("acid") -> {
+            Icons.Default.LocalDrink // REPRESENTACE SKLENICE MLÉKA
+        }
+        // Pokud zelenina nebo ovoce, přiřadí botanickou ikonu
+        lowercase.contains("zelenina") || lowercase.contains("ovoce") || lowercase.contains("mrkev") || lowercase.contains("jablko") || lowercase.contains("citrón") || lowercase.contains("citron") || lowercase.contains("salát") || lowercase.contains("salat") || lowercase.contains("rajče") || lowercase.contains("rajčata") || lowercase.contains("brambor") || lowercase.contains("cibule") || lowercase.contains("česnek") || lowercase.contains("cesnek") || lowercase.contains("vegetable") || lowercase.contains("fruit") -> {
+            Icons.Default.Spa // REPRESENTACE ROSTLINY / ZELENINY / SPA
+        }
+        // Pokud chléb nebo pečivo, přiřadí ikonu pekárny
+        lowercase.contains("chléb") || lowercase.contains("chlieb") || lowercase.contains("pečivo") || lowercase.contains("pecivo") || lowercase.contains("rohlik") || lowercase.contains("rohlík") || lowercase.contains("houska") || lowercase.contains("bread") || lowercase.contains("bageta") || lowercase.contains("toast") || lowercase.contains("briošk") || lowercase.contains("muff") -> {
+            Icons.Default.BakeryDining // REPRESENTACE PEČIVA / PEKÁRNY
+        }
+        // Výchozí ikona pro ostatní suroviny
+        else -> {
+            Icons.Default.ShoppingBag
+        }
+    }
+    return rememberVectorPainter(image = icon)
+}
+
+/**
+ * KOMPONENTA "PREMIUM CARD" (Základní stavební prvek)
+ * Implementuje jedinečný a vizuálně bohatý vzhled Varianty B: Bankovní styl (Modern Premium).
+ */
+@Composable
+fun ProductCard(
     item: PantryItem,
     onDelete: () -> Unit,
     isSlovak: Boolean
 ) {
     val daysLeft = ((item.expirationTimestamp - System.currentTimeMillis()) / (24 * 60 * 60 * 1000L)).toInt()
     
-    // Traffic light warning bar logic
+    // Určení barvy indikátoru čerstvosti (10dp šířka) a popisku dle expirace
     val (statusColor, statusLabel) = when {
         daysLeft < 0 -> Pair(TomatoRedTertiary, if (isSlovak) "Expirovalo!" else "Prošlé!")
         daysLeft == 0 -> Pair(TomatoRedTertiary, if (isSlovak) "Dnes expiruje!" else "Dnes expiruje!")
@@ -854,104 +1266,149 @@ fun PantryItemCard(
     val currency = if (isSlovak) "EUR" else "Kč"
 
     Card(
-        colors = CardDefaults.cardColors(containerColor = DarkSurface),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, BorderNatural),
-        modifier = Modifier.fillMaxWidth()
+        colors = CardDefaults.cardColors(containerColor = LightSurface), // Stejně skvělý vzhled ve světlém i tmavém režimu
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .testTag("product_card_${item.name.replace(" ", "_")}")
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // Traffic Light color coding bar
+            // 1. Vlevo barevný vertikální indikátor čerstvosti (10dp šířka) pro rychlou navigaci očima
             Box(
                 modifier = Modifier
-                    .width(6.dp)
+                    .width(10.dp)
                     .fillMaxHeight()
-                    .align(Alignment.CenterVertically)
                     .background(statusColor)
-                    .height(80.dp) // standard height block
             )
 
+            // Vnitřní klientská plocha karty s elegantními rozestupy
             Row(
                 modifier = Modifier
-                    .padding(12.dp)
-                    .fillMaxWidth(),
+                    .weight(1f)
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = item.name,
-                            color = CreamText,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Box(
-                            modifier = Modifier
-                                .background(FreshGreenPrimary.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                text = item.quantityHint,
-                                color = FreshGreenPrimary,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(6.dp))
+                // Informační sekce: Tučný název (Brand + Product) a doplňující parametry
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = item.name,
+                        color = CreamText,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        // Category pill
-                        Box(
-                            modifier = Modifier
-                                .background(BorderNatural, RoundedCornerShape(4.dp))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                text = when (item.category) {
-                                    "Fridge" -> if (isSlovak) "V Chladničke" else "V Lednici"
-                                    "Freezer" -> if (isSlovak) "V Mrazáku" else "V Mrazáku"
-                                    else -> if (isSlovak) "V Spíži" else "Ve Spižírně"
-                                },
-                                color = CreamText.copy(alpha = 0.6f),
-                                fontSize = 10.sp
-                            )
-                        }
+                        // Lokace / kategorie uložení
+                        Text(
+                            text = when (item.category) {
+                                "Fridge" -> if (isSlovak) "Chladnička" else "Lednice"
+                                "Freezer" -> if (isSlovak) "Mrazák" else "Mrazák"
+                                else -> if (isSlovak) "Spižírna" else "Spižírna"
+                            },
+                            color = CreamText.copy(alpha = 0.5f),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Medium
+                        )
 
-                        // Price approximation if logged
+                        Text(
+                            text = "•",
+                            color = CreamText.copy(alpha = 0.25f),
+                            fontSize = 10.sp
+                        )
+
+                        // Odhadovaná cena produktu detailu
                         if (item.approxPrice > 0.0) {
                             Text(
-                                text = "~ ${item.approxPrice} $currency",
+                                text = "${item.approxPrice} $currency",
                                 color = SaffronGoldSecondary,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
+                            Text(
+                                text = "•",
+                                color = CreamText.copy(alpha = 0.25f),
+                                fontSize = 10.sp
+                            )
                         }
+
+                        // Expirace / Čerstvost
+                        Text(
+                            text = statusLabel,
+                            color = statusColor,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
-
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    Text(
-                        text = statusLabel,
-                        color = statusColor,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
                 }
 
-                IconButton(onClick = onDelete) {
-                    Icon(
-                        Icons.Default.Delete,
-                        contentDescription = "Delete Item",
-                        tint = CreamText.copy(alpha = 0.3f)
-                    )
+                // Pravá strana: Ikona produktu + Quantity Badge ("1 ks") a akční odstranění
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // 2. Inteligentní ikona s doplňujícím ohraničením (Design ze studia StepIn Tech)
+                    val productIconPainter = getIconForProduct(productName = item.name)
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .background(DarkBg, RoundedCornerShape(8.dp))
+                            .border(1.dp, BorderNatural.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                            .padding(8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = productIconPainter,
+                            contentDescription = item.name,
+                            tint = FreshGreenPrimary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+
+                    // 3. Vizualizace "Quantity Badge" (např. "1 ks"), jasně oddělené a přehledné
+                    Box(
+                        modifier = Modifier
+                            .background(SoftGreenGlow, RoundedCornerShape(8.dp))
+                            .padding(horizontal = 9.dp, vertical = 5.dp)
+                    ) {
+                        Text(
+                            text = item.quantityHint,
+                            color = FreshGreenPrimary,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+
+                    // Odstraňovací tlačítko s Material ripple feedbackem
+                    IconButton(
+                        onClick = onDelete,
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(LightSurface, CircleShape)
+                            .border(1.dp, BorderNatural.copy(alpha = 0.2f), CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Odebrat",
+                            tint = TomatoRedTertiary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
             }
         }

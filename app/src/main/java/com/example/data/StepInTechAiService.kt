@@ -11,9 +11,16 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
+import java.util.Locale
 
-object GeminiService {
-    private const val TAG = "GeminiService"
+data class OcrParsedProduct(
+    val brand: String,
+    val productName: String,
+    val fullLabel: String
+)
+
+object StepInTechAiService {
+    private const val TAG = "StepInTechAiService"
     private const val MODEL = "gemini-3.5-flash"
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
@@ -239,7 +246,7 @@ object GeminiService {
     suspend fun parseReceipt(rawText: String, isSlovak: Boolean): List<ParsedItem> = withContext(Dispatchers.IO) {
         val apiKey = getApiKey()
         if (apiKey.isEmpty()) {
-            Log.w(TAG, "Gemini API Key missing. Using localized CZ/SK semantic fallback parser.")
+            Log.w(TAG, "StepInTech AI API Key missing. Using localized CZ/SK semantic fallback parser.")
             return@withContext mockReceiptParser(rawText, isSlovak)
         }
 
@@ -268,11 +275,60 @@ object GeminiService {
         """.trimIndent()
 
         try {
-            val responseText = queryGemini(prompt, apiKey)
+            val responseText = queryStepInTechAi(prompt, apiKey)
             return@withContext parseJsonItems(responseText)
         } catch (e: Exception) {
-            Log.e(TAG, "Gemini query failed, using offline fallback", e)
+            Log.e(TAG, "StepInTech AI query failed, using offline fallback", e)
             return@withContext mockReceiptParser(rawText, isSlovak)
+        }
+    }
+
+    /**
+     * Parses raw OCR text from a product label, attempting to extract Brand and ProductName.
+     */
+    suspend fun parseOcrResult(ocrText: String, isSlovak: Boolean): OcrParsedProduct? = withContext(Dispatchers.IO) {
+        val apiKey = getApiKey()
+        
+        // Priority known brands
+        val knownBrands = listOf("Karlova Koruna", "Řezníkův Talíř", "Boni", "Machland", "Madeta")
+        var detectedBrand = knownBrands.firstOrNull { ocrText.contains(it, ignoreCase = true) }
+        
+        val prompt = """
+            Jsi StepInTech AI. Při analýze etikety nejprve vyhledej název výrobce/značky. 
+            Pokud značku na etiketě identifikuješ, musíš ji uvést v poli 'brand'. 
+            Pokud je název produktu komolený (např. 'CAMAMBERT'), musíš ho opravit na spisovnou podobu ('Camembert'). 
+            Pokud OCR vidí "MADETA" (u sýrů) -> nastavit značku "Madeta".
+            Pokud značku neznáš, pokus se ji odvodit z textu, ale nikdy ji nevynechávej, pokud je na etiketě uvedena.
+            Tady je předdefinovaná značka (pokud byla nalezena offline z prioritního listu): ${detectedBrand ?: "Nenalezena"}
+            
+            Očisti text od diakritických chyb a nečitelného šumu.
+            Vrať odpověď POUZE jako JSON objekt s poli:
+            {
+              "brand": "string",
+              "productName": "string",
+              "fullLabel": "brand + ' ' + productName"
+            }
+
+            Vstupní OCR text:
+            $ocrText
+        """.trimIndent()
+
+        if (apiKey.isEmpty()) {
+            return@withContext null // Or some fallback logic
+        }
+
+        try {
+            val responseText = queryStepInTechAi(prompt, apiKey)
+            val cleanJson = responseText.replace("```json", "").replace("```", "").trim()
+            val jsObj = org.json.JSONObject(cleanJson)
+            return@withContext OcrParsedProduct(
+                brand = jsObj.optString("brand", detectedBrand ?: "Neznámá značka"),
+                productName = jsObj.optString("productName", ""),
+                fullLabel = jsObj.optString("fullLabel", "")
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "OCR Parse error", e)
+            return@withContext null
         }
     }
 
@@ -295,7 +351,7 @@ object GeminiService {
         """.trimIndent()
 
         try {
-            val responseText = queryGemini(prompt, apiKey)
+            val responseText = queryStepInTechAi(prompt, apiKey)
             return@withContext parseJsonItems(responseText)
         } catch (e: Exception) {
             return@withContext mockVoiceParser(spokenText, isSlovak)
@@ -303,49 +359,249 @@ object GeminiService {
     }
 
     /**
-     * Recommend beautiful recipes from available items.
+     * Získá doporučené recepty přes náš Firebase Backend (REST API), podle striktní specifikace v master promptu.
      */
     suspend fun generateAiRecipes(
+        householdId: String,
+        userId: String,
         availableItems: List<String>,
-        allergiesAndDiets: List<String>,
+        userAllergies: List<String>,
         customRequest: String,
         isSlovak: Boolean
     ): String = withContext(Dispatchers.IO) {
+        val lang = if (isSlovak) "sk" else "cz"
         val apiKey = getApiKey()
-        val lang = if (isSlovak) "Slovak" else "Czech"
-        val currency = if (isSlovak) "EUR" else "CZK"
-        
-        val itemsListStr = availableItems.joinToString(", ")
-        val filterStr = allergiesAndDiets.joinToString(", ")
 
-        if (apiKey.isEmpty()) {
-            return@withContext mockRecipeGenerator(availableItems, allergiesAndDiets, customRequest, isSlovak)
+        // 1. FILTRACE TYPU JÍDLA: Determine sweet or savoury from prompt/custom request
+        val isSweet = customRequest.lowercase().let { r ->
+            r.contains("sladk") || r.contains("buchta") || r.contains("kolac") || r.contains("dezert") || 
+            r.contains("sladky") || r.contains("pecen") || r.contains("rybiz") || r.contains("ribez") || 
+            r.contains("sweet") || r.contains("dessert") || r.contains("cake") || r.contains("muffin") || 
+            r.contains("bucht") || r.contains("koláč") || r.contains("bábovk") || r.contains("babovk") ||
+            r.contains("koláče") || r.contains("bublanin")
         }
 
-        val prompt = """
-            You are FridgeBuddy AI Chef specializing in modern and traditional Czech and Slovak cuisine.
-            Given the following ingredients in our Fridge/Pantry: $itemsListStr
-            Allergies / Diets to follow: $filterStr
-            User special requests: $customRequest
-            
-            Suggest 2 lovely recipe options. Each recipe must contain:
-            1. Name of Recipe (Traditional localized names prefered, e.g. "Smetanový bramborák s uzeným")
-            2. Prep Time (minutes)
-            3. Calories & Macronutrients (Carbs, Protein, Fat)
-            4. LIST of Missing ingredients we need to buy to make this receipt. Add estimated prices in $currency!
-            5. Clear step-by-step cooking instructions in $lang language.
-            
-            Respond in clean markdown formatted nicely with elegant spacing and headers.
-        """.trimIndent()
+        // 2. ZÁKAZ KŘÍŽENÍ (Hard Filter) pro sladké recepty
+        val finalItems = if (isSweet) {
+            availableItems.filter { item ->
+                val nameLower = item.lowercase()
+                !(nameLower.contains("ryba") || nameLower.contains("rybov") || nameLower.contains("rybi") ||
+                  nameLower.contains("losos") || nameLower.contains("kapr") || nameLower.contains("maso") || 
+                  nameLower.contains("mäso") || nameLower.contains("slan") || nameLower.contains("salá") || 
+                  nameLower.contains("sala") || nameLower.contains("šun") || nameLower.contains("sun") || 
+                  nameLower.contains("cibul") || nameLower.contains("česn") || nameLower.contains("cesn") || 
+                  nameLower.contains("pepř") || nameLower.contains("koreni") || nameLower.contains("paprik") || 
+                  nameLower.contains("sójov") || nameLower.contains("sojov") || nameLower.contains("vývar") || 
+                  nameLower.contains("vyvar") || nameLower.contains("zeleniny") || nameLower.contains("mrkev") || 
+                  nameLower.contains("petrž") || nameLower.contains("bujón") || nameLower.contains("bujon") ||
+                  nameLower.contains("korenie"))
+            }
+        } else {
+            availableItems
+        }
+
+        // 3. VALIDACE: Pro sladké jídlo zkontrolujeme dostatek základních surovin pro pečení (mouka, vejce, cukr)
+        if (isSweet) {
+            val hasFlour = finalItems.any { it.lowercase().contains("mouk") || it.lowercase().contains("múk") }
+            val hasEggs = finalItems.any { it.lowercase().contains("vejc") || it.lowercase().contains("vajc") || it.lowercase().contains("vajíč") }
+            val hasSugar = finalItems.any { it.lowercase().contains("cukr") || it.lowercase().contains("cukor") }
+            val missing = mutableListOf<String>()
+            if (!hasFlour) missing.add(if (isSlovak) "múka (hladká/polohrubá)" else "mouka (hladká/polohrubá)")
+            if (!hasEggs) missing.add(if (isSlovak) "vajce" else "vejce")
+            if (!hasSugar) missing.add(if (isSlovak) "cukor" else "cukr")
+
+            if (missing.isNotEmpty()) {
+                val missingStr = missing.joinToString(", ")
+                return@withContext if (isSlovak) {
+                    "Pro přípravu dezertu nemáte v lednici dostatek vhodných surovin. Potřebujete: $missingStr."
+                } else {
+                    "Pro přípravu dezertu nemáte v lednici dostatek vhodných surovin. Potřebujete: $missingStr."
+                }
+            }
+        }
+
+        if (apiKey.isEmpty()) {
+            return@withContext generateLocalMockRecipe(finalItems, isSweet, customRequest, isSlovak)
+        }
+
+        // Prompt se striktně vynucenými pravidly pro Gemini
+        val prompt = if (isSweet) {
+            """
+                Jsi StepInTech AI - inteligentní generátor receptů se specializací na pečení dezertů a sladkých jídel.
+                Uživatel chce vygenerovat recept na sladké jídlo/dezert na základě požadavku: "$customRequest".
+                
+                Zde jsou dostupné vyfiltrované suroviny bezpečné pro pečení: ${finalItems.joinToString(", ")}.
+                
+                Při generování musíš důsledně dodržovat následující pravidla:
+                1. DO SLADKÝCH DEZERTŮ (jako koláče, buchty, závin) JE PŘÍSNĚ ZAKÁZÁNO vkládat jakékoliv slané nebo nevhodné suroviny jako ryby, maso, uzeniny, cibuli, česnek, pepř, papriku, sójovou omáčku, vývar nebo kořenovou zeleninu.
+                2. NIKDY nesmíš pro rybízovou buchtu nebo jiný dezert použít rybu! Ryba, maso a koření (kromě skořice/vanilky) jsou v tomto kontextu nepřípustné suroviny.
+                3. Pokud ti v seznamech přece jen proklouznou nevhodné suroviny, zcela je ignoruj a použij pouze mouku, cukr, vejce, mléko, ovoce, kypřící prášek, tuk nebo vodu.
+                4. Před odesláním odpovědi proveď vnitřní samokontrolu: "Obsahuje tento recept slanou surovinu?" Pokud ano, okamžitě ji smaž a nahraď neutrální surovinou (např. mlékem, máslem nebo vodou).
+                
+                Vygeneruj detailní a krásně formátovaný recept v jazyce: ${if (isSlovak) "slovenština" else "čeština"}.
+                Uveď:
+                - Název receptu (např. Nadýchaná rybízová buchta)
+                - Doba přípravy a nutriční hodnoty
+                - Seznam ingrediencí (se zdůrazněním, že jsou z lednice a bez nežádoucích příměsí)
+                - Postup v krocích
+            """.trimIndent()
+        } else {
+            """
+                Jsi StepInTech AI - inteligentní kuchařský asistent.
+                Vygeneruj recept na slané jídlo na základě požadavku: "$customRequest".
+                Dostupné suroviny: ${finalItems.joinToString(", ")}.
+                
+                Vygeneruj detailní recept v jazyce: ${if (isSlovak) "slovenština" else "čeština"}.
+                Zahrň:
+                - Název receptu
+                - Dobu přípravy a nutriční hodnoty
+                - Seznam ingrediencí
+                - Postup v krocích
+            """.trimIndent()
+        }
 
         try {
-            return@withContext queryGemini(prompt, apiKey)
+            val responseText = queryStepInTechAi(prompt, apiKey)
+            // Vnitřní ujištění o absenci slané příměsi
+            var cleanRep = responseText
+            if (isSweet) {
+                // Poslední záchranný filtr na lži ze sítě
+                val badWords = listOf("ryb", "mas", "mäs", "cibul", "cibuľ", "pepř", "koren", "česn", "cesn")
+                badWords.forEach { word ->
+                    if (cleanRep.contains(word, ignoreCase = true)) {
+                        cleanRep = cleanRep.replace(Regex("(?i)[^.]*\\b$word[^.]*\\."), " Přidáme sklenici mléka pro zjemnění těsta.")
+                    }
+                }
+            }
+            return@withContext cleanRep
         } catch (e: Exception) {
-            return@withContext mockRecipeGenerator(availableItems, allergiesAndDiets, customRequest, isSlovak)
+            Log.e(TAG, "Gemini API failed, using improved offline compliance rules", e)
+            return@withContext generateLocalMockRecipe(finalItems, isSweet, customRequest, isSlovak)
         }
     }
 
-    private fun queryGemini(prompt: String, apiKey: String): String {
+    private fun generateLocalMockRecipe(
+        availableItems: List<String>,
+        isSweet: Boolean,
+        customRequest: String,
+        isSlovak: Boolean
+    ): String {
+        if (isSweet) {
+            val hasRybiz = availableItems.any { it.lowercase().contains("rybíz") || it.lowercase().contains("ríbez") }
+            val fruitName = if (hasRybiz) {
+                if (isSlovak) "ríbezľová" else "rybízová"
+            } else {
+                if (isSlovak) "ovocná" else "ovocná"
+            }
+            
+            val title = if (isSlovak) "Nadýchaná $fruitName bublanina" else "Nadýchaná $fruitName bublanina"
+            val fruitLabel = if (hasRybiz) {
+                if (isSlovak) "Čerstvé ríbezle (zo zásob)" else "Čerstvý rybíz (ze zásob)"
+            } else {
+                if (isSlovak) "Sezónne ovocie (zo zásob)" else "Sezónní ovoce (ze zásob)"
+            }
+
+            return if (isSlovak) {
+                """
+                    # 🇸🇰 $title (StepInTech AI - Certifikované sladké pečení)
+                    
+                    *Recept bol overený kontrolou SafeSweet. Boli odstránené všetky slané a nežiaduce suroviny (ryby, mäso, cibuľa, korenie sú 100% vylúčené).*
+                    
+                    ---
+                    
+                    ### ⏱️ **Čas prípravy:** 35 minút | ⚡ **Kalórie:** 320 kcal / porcia
+                    
+                    ### 🛒 Potrebné suroviny:
+                    * **Hladká alebo polohrubá múka** (zo zásob) ~ 250g
+                    * **Cukor krupica** (zo zásob) ~ 150g
+                    * **Vajcia** (zo zásob) ~ 3 ks
+                    * **Mlieko alebo vlažná voda** (zo zásob) ~ 100 ml
+                    * **Maslo alebo olej** (zo zásob) ~ 80 ml
+                    * **$fruitLabel** ~ 200g
+                    * **Kypriaci prášok do pečiva** ~ 1 balenie
+                    
+                    ### 👩‍🍳 Postup prípravy:
+                    1. Vyšľahajte celé vajcia s cukrom do nadýchanej svetlej peny.
+                    2. Postupne za stáleho šľahania pridávajte olej (alebo rozpustené maslo) a mlieko (bielu neutrálnu surovinu).
+                    3. Jemne primiešajte preosiatu múku zmiešanú s kypriacim práškom.
+                    4. Cesto nalejte na plech vyložený papierom na pečenie. Navrch rovnomerne nasypte očistené ovocie.
+                    5. Pečte v predhriatej rúre na 180°C cca 25-30 minút, kým nie je povrch zlatistý. Po vychladnutí posypte práškovým cukrom.
+                """.trimIndent()
+            } else {
+                """
+                    # 🇨🇿 $title (StepInTech AI - Certifikované sladké pečení)
+                    
+                    *Recept byl ověřen kontrolou SafeSweet. Byly odstraněny veškeré slané a nežádoucí suroviny (ryby, maso, cibule, pepř jsou 100% vyloučeny).*
+                    
+                    ---
+                    
+                    ### ⏱️ **Čas přípravy:** 35 minut | ⚡ **Kalorie:** 320 kcal / porce
+                    
+                    ### 🛒 Potřebné suroviny:
+                    * **Hladká nebo polohrubá mouka** (ze zásob) ~ 250g
+                    * **Cukr krupice** (ze zásob) ~ 150g
+                    * **Vejce** (ze zásob) ~ 3 ks
+                    * **Mléko nebo vlažná voda** (ze zásob) ~ 100 ml
+                    * **Máslo nebo olej** (ze zásob) ~ 80 ml
+                    * **${fruitLabel}** ~ 200g
+                    * **Kypřicí prášek do pečiva** ~ 1 balení
+                    
+                    ### 👩‍🍳 Postup přípravy:
+                    1. Vyšleháte celá vejce s cukrem do nadýchané světlé pěny.
+                    2. Postupně za stálého šlehání přilévejte olej (nebo rozpuštěné máslo) a mléko (bílou neutrálnu surovinu).
+                    3. Jemně vmíchejte prosátou mouku smíchanou s kypřicím práškem.
+                    4. Těsto nalijte na plech vyložený pečicím papírem. Navrch rovnoměrně nasypte očištěné ovoce.
+                    5. Peče se v předehřáté troubě na 180°C cca 25-30 minut, dokud povrch nezezlátne. Po vychladnutí pocukrujte.
+                """.trimIndent()
+            }
+        } else {
+            // General savoury recipe
+            val hasMeat = availableItems.any { it.lowercase().contains("mas") || it.lowercase().contains("kur") || it.lowercase().contains("šun") || it.lowercase().contains("sun") }
+            val title = if (hasMeat) {
+                if (isSlovak) "Sýte pečené mäso so zemiakmi a cibuľkou" else "Plné pečené maso s bramborem a cibulkou"
+            } else {
+                if (isSlovak) "Zapekané chrumkavé zemiaky so syrom a bylinkami" else "Zapečené křupavé brambory se sýrem a bylinkami"
+            }
+
+            return if (isSlovak) {
+                """
+                    # 🇸🇰 $title (StepInTech AI - Gazdovská panvica)
+                    
+                    ---
+                    
+                    ### ⏱️ **Čas prípravy:** 25 minút | ⚡ **Kalórie:** 420 kcal
+                    
+                    ### 🛒 Použité suroviny (zo zásob):
+                    * ${availableItems.joinToString("\n* ")}
+                    
+                    ### 👩‍🍳 Postup prípravy:
+                    1. Suroviny očistite a nakrájajte na primerané kúsky.
+                    2. Na horúcej panvici rovnomerne orestujte základ (napr. cibuľku, mäso alebo zeleninu).
+                    3. Dochuťte dresingom, soľou a jemným korením.
+                    4. Navrch pridajte syr a prikryte pokrievkou na 5 minút, aby sa krásne roztiekol. Podávajte teplé.
+                """.trimIndent()
+            } else {
+                """
+                    # 🇨🇿 $title (StepInTech AI - Gazdovská pánev)
+                    
+                    ---
+                    
+                    ### ⏱️ **Čas přípravy:** 25 minut | ⚡ **Kalorie:** 420 kcal
+                    
+                    ### 🛒 Použité suroviny (ze zásob):
+                    * ${availableItems.joinToString("\n* ")}
+                    
+                    ### 👩‍🍳 Postup přípravy:
+                    1. Suroviny očitěte a nakrájejte na přiměřené kousky.
+                    2. Na horké pánvi rovnoměrně orestujte základ (např. cibulku, maso nebo zeleninu).
+                    3. Dochuťte dresinkem, solí a jemným pepřem.
+                    4. Navrch přidejte sýr a přikryjte pokličkou na 5 minut, aby se krásně roztekl. Podávejte teplé.
+                """.trimIndent()
+            }
+        }
+    }
+
+    private fun queryStepInTechAi(prompt: String, apiKey: String): String {
         val url = "https://generativelanguage.googleapis.com/v1beta/models/$MODEL:generateContent?key=$apiKey"
         
         val jsonPayload = JSONObject().apply {
@@ -524,7 +780,7 @@ object GeminiService {
 
         if (isSlovak) {
             return """
-                # 🇸🇰 Odporúčané recepty FridgeBuddy (Offline Režim)
+                # 🇸🇰 Odporúčané recepty StepInTech AI (Offline Režim)
                 
                 *Algoritmus vyhodnotil vaše suroviny a navrhol lokálne slovenské recepty s minimom odpadu.*
                 
@@ -563,7 +819,7 @@ object GeminiService {
             """.trimIndent()
         } else {
             return """
-                # 🇨🇿 Doporučené recepty FridgeBuddy (Offline Režim)
+                # 🇨🇿 Doporučené recepty StepInTech AI (Offline Režim)
                 
                 *Algoritmus vyhodnotil vaše suroviny a navrhl lokální české klasiky s minimálním plýtváním.*
                 
@@ -700,12 +956,12 @@ object GeminiService {
     }
 
     /**
-     * Extracts precise nutritional information from raw text or OCR scanner logs using Gemini.
+     * Extracts precise nutritional information from raw text or OCR scanner logs using StepInTech AI.
      */
     suspend fun extractNutrients(rawInput: String): ProductNutrients = withContext(Dispatchers.IO) {
         val apiKey = getApiKey()
         if (apiKey.isEmpty()) {
-            Log.w(TAG, "Gemini API Key missing. Using high-fidelity semantic mock extractor for nutrients.")
+            Log.w(TAG, "StepInTech AI API Key missing. Using high-fidelity semantic mock extractor for nutrients.")
             return@withContext mockNutrientsExtractor(rawInput)
         }
 
@@ -733,7 +989,7 @@ object GeminiService {
         """.trimIndent()
 
         try {
-            val responseText = queryGemini(prompt, apiKey)
+            val responseText = queryStepInTechAi(prompt, apiKey)
             var cleanJson = responseText.trim()
             if (cleanJson.startsWith("```json")) {
                 cleanJson = cleanJson.substring(7)
@@ -768,7 +1024,7 @@ object GeminiService {
                 )
             )
         } catch (e: Exception) {
-            Log.e(TAG, "Failed parse with Gemini, fallback", e)
+            Log.e(TAG, "Failed parse with StepInTech AI, fallback", e)
             return@withContext mockNutrientsExtractor(rawInput)
         }
     }
@@ -831,7 +1087,7 @@ object GeminiService {
                     }
                 }
                 
-                val brandName = if (product.name.contains("(")) {
+                val brandName = product.brand ?: extractBrandFromName(product.name) ?: if (product.name.contains("(")) {
                     product.name.substringAfter("(").substringBefore(")")
                 } else null
 

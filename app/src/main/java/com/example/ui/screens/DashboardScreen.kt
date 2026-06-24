@@ -49,10 +49,18 @@ fun DashboardScreen(
     val pantryItems by viewModel.pantryItems.collectAsState()
     val backupStatus by viewModel.backupStatus.collectAsState()
     val healthConnectSynced by viewModel.isHealthConnectSynced.collectAsState()
+    
+    // Nové proměnné pro rozpad kalorií z hodinek (Mock data pro UI demonstraci)
+    val activeWatchCalories = 450 // Mock (Aktivita: +450 kcal z hodinek)
+    val baseCalorieGoal = calorieGoal
+    val adjustedCalorieGoal = baseCalorieGoal + activeWatchCalories
 
     var showGoalDialog by remember { mutableStateOf(false) }
     var fastMealInput by remember { mutableStateOf("") }
     var showFastMealDialog by remember { mutableStateOf(false) }
+    var showAboutDialog by remember { mutableStateOf(false) }
+    var showFamilyPairingDialog by remember { mutableStateOf(false) }
+    val householdManager = remember { com.example.data.HouseholdManager() }
 
     val currency = if (isSlovak) "EUR" else "Kč"
 
@@ -258,14 +266,14 @@ fun DashboardScreen(
                 // Responsive Canvas drawing of nutrition rings
                 Box(
                     modifier = Modifier
-                        .size(130.dp)
+                        .fillMaxWidth(0.35f)
                         .padding(8.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    val progressRatio = if (calorieGoal > 0) caloriesToday.toFloat() / calorieGoal else 0f
+                    val progressRatio = if (adjustedCalorieGoal > 0) caloriesToday.toFloat() / adjustedCalorieGoal else 0f
                     val animatedProgress = Math.min(progressRatio, 1f)
 
-                    Canvas(modifier = Modifier.fillMaxSize()) {
+                    Canvas(modifier = Modifier.fillMaxSize().aspectRatio(1f)) {
                         // Drawing circles
                         val strokeWidth = 10.dp.toPx()
                         
@@ -299,20 +307,26 @@ fun DashboardScreen(
                         Text(
                             text = "$caloriesToday",
                             color = CreamText,
-                            fontSize = 24.sp,
+                            fontSize = 25.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
                             text = "kcal",
                             color = CreamText.copy(alpha = 0.6f),
-                            fontSize = 11.sp
+                            fontSize = 12.sp
                         )
                         Text(
-                            text = "/ $calorieGoal",
+                            text = "/ $adjustedCalorieGoal",
                             color = SaffronGoldSecondary,
-                            fontSize = 12.sp,
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold
                         )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Watch, contentDescription = "Watch Sync", tint = CreamText.copy(alpha = 0.5f), modifier = Modifier.size(10.dp))
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Box(modifier = Modifier.size(4.dp).background(Color.Green, CircleShape))
+                        }
                     }
                 }
 
@@ -324,11 +338,20 @@ fun DashboardScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = if (isSlovak) "Denný Príjem" else "Denní Příjem",
+                        text = if (isSlovak) "Zvyšný rozpočet" else "Zbývající rozpočet",
                         color = CreamText,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
+                        fontSize = 15.sp
                     )
+                    
+                    // Rozpad - Základ: 2000 | Aktivita: 450
+                    Text(
+                        text = "Základ: $baseCalorieGoal kcal | Aktivita: +$activeWatchCalories kcal",
+                        color = CreamText.copy(alpha = 0.5f),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
                     
                     MacroIndicator(
                         label = if (isSlovak) "Bielkoviny" else "Bílkoviny",
@@ -509,13 +532,13 @@ fun DashboardScreen(
                     ) {
                         Icon(
                             Icons.Default.Add,
-                            contentDescription = "Add custom meal",
+                            contentDescription = "Add ready meal",
                             tint = SoftGreenGlow,
                             modifier = Modifier.size(32.dp)
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = if (isSlovak) "Iné jedlo" else "Jiné jídlo",
+                            text = if (isSlovak) "Hotové jedlo" else "Hotové jídlo",
                             color = CreamText,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
@@ -526,7 +549,53 @@ fun DashboardScreen(
             }
         }
 
-        // 5. Syncing Metadata Panel: Android Health Connect + Google Cloud Backup
+        // 5. Family Pairing / Rodinná lednice
+        Card(
+            colors = CardDefaults.cardColors(containerColor = SoftGreenGlow.copy(alpha = 0.2f)),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { showFamilyPairingDialog = true }
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.Group,
+                        contentDescription = "Family Pairing",
+                        tint = FreshGreenPrimary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = if (isSlovak) "Rodinná chladnička" else "Rodinná lednice",
+                            color = CreamText,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp
+                        )
+                        Text(
+                            text = if (isSlovak) "Pripojte rodinu a zdieľajte zásoby" else "Propojte rodinu a sdílejte zásoby",
+                            color = CreamText.copy(alpha = 0.6f),
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+                Icon(
+                    imageVector = Icons.Default.QrCodeScanner,
+                    contentDescription = "Scan QR",
+                    tint = FreshGreenPrimary,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
+
+        // 6. Syncing Metadata Panel: Android Health Connect + Google Cloud Backup
         Card(
             colors = CardDefaults.cardColors(containerColor = DarkSurface.copy(alpha = 0.5f)),
             shape = RoundedCornerShape(12.dp),
@@ -813,6 +882,98 @@ fun DashboardScreen(
                             }
                         }
                     }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+            Divider(color = BorderNatural, thickness = 1.dp)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "NutriKalk v1.0",
+                    color = CreamText.copy(alpha = 0.4f),
+                    fontSize = 12.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = { showAboutDialog = true },
+                    colors = ButtonDefaults.buttonColors(containerColor = SoftGreenGlow, contentColor = FreshGreenPrimary),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("O StepIn Tech", fontWeight = FontWeight.Bold)
+                }
+            }
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+
+        if (showAboutDialog) {
+            Dialog(onDismissRequest = { showAboutDialog = false }) {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = DarkSurface,
+                    border = BorderStroke(1.dp, BorderNatural)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "O StepIn Tech",
+                            color = CreamText,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Ahoj! Jmenuji se Štěpán a NutriKalk vznikl z jednoho náhodného nápadu během mého studia programování. Chtěl jsem vytvořit něco, co bude lidem reálně pomáhat. Tak vzniklo mé studio StepIn Tech – název v sobě skrývá nejen kus mého jména, ale i symbolický „vstup“ do světa chytrých technologií.",
+                            color = CreamText.copy(alpha = 0.8f),
+                            fontSize = 14.sp,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "Děkuji, že NutriKalk používáš! Aplikaci neustále posouvám dál, takže s radostí a vděčností uvítám jakoukoliv zpětnou vazbu, nápady na zlepšení nebo hlášení chyb.",
+                            color = CreamText.copy(alpha = 0.8f),
+                            fontSize = 14.sp,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "✉️ Napiš mi na: stepintech.cz@gmail.com",
+                            color = FreshGreenPrimary,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Button(
+                            onClick = { showAboutDialog = false },
+                            colors = ButtonDefaults.buttonColors(containerColor = FreshGreenPrimary)
+                        ) {
+                            Text("Zavřít", color = DarkBg)
+                        }
+                    }
+                }
+            }
+        }
+        
+        if (showFamilyPairingDialog) {
+            Dialog(onDismissRequest = { showFamilyPairingDialog = false }) {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = DarkSurface,
+                    modifier = Modifier.fillMaxSize(0.9f)
+                ) {
+                    FamilyPairingScreen(
+                        viewModel = viewModel,
+                        householdManager = householdManager,
+                        onPairingSuccess = { showFamilyPairingDialog = false },
+                        onCancel = { showFamilyPairingDialog = false }
+                    )
                 }
             }
         }

@@ -1,5 +1,5 @@
 {
-  "name": "Chytrá Spižírna",
+  "name": "NutriKalk",
   "description": "Reducing food waste, tracking expiration dates, and smart cooking from leftovers with Czech/Slovak localization, receipt scanning, calorie tracking, and offline support.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

@@ -473,7 +473,7 @@ fun CentralScannerScreen(
                             scope.launch {
                                 isAnalyzingNutrients = true
                                 try {
-                                    val result = com.example.data.GeminiService.extractNutrients(centralText)
+                                    val result = com.example.data.StepInTechAiService.extractNutrients(centralText)
                                     analyzedNutrients = result
                                     portionGrams = if (result.serving_size_g != null && result.serving_size_g > 0) {
                                         result.serving_size_g.toString()
@@ -535,7 +535,7 @@ fun CentralScannerScreen(
                 ) {
                     CircularProgressIndicator(modifier = Modifier.size(18.dp), color = SaffronGoldSecondary, strokeWidth = 2.dp)
                     Spacer(modifier = Modifier.width(12.dp))
-                    Text(if (isSlovak) "AI analyzuje nutričné hodnoty..." else "AI analyzuje nutriční hodnoty...", fontSize = 12.sp, color = CreamText)
+                    Text(if (isSlovak) "StepInTech AI analyzuje nutričné hodnoty..." else "StepInTech AI analyzuje nutriční hodnoty...", fontSize = 12.sp, color = CreamText)
                 }
             }
         }

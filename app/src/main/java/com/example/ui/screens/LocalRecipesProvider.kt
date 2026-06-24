@@ -240,14 +240,265 @@ object LocalRecipesProvider {
             "Okurková limonáda s limetkou|Uhorková limonáda s limetkou|piti",
             "Zázvorový čaj s citronem|Zázvorový čaj s citrónom|piti",
             "Tradiční studené kakao|Tradičné studené kakao|piti",
-            "Mango lassi s kardamomem|Mango lassi s kardamónom|piti"
+            "Mango lassi s kardamomem|Mango lassi s kardamónom|piti",
+            "Beton (Becherovka & Tonic)|Betón (Becherovka & Tonik)|alko",
+            "Bavorák (Fernet & Tonic)|Bavorák (Fernet & Tonik)|alko",
+            "Božkovská kofola (Rum & Kofola)|Božkovská kofola (Rum & Kofola)|alko",
+            "Slovak Libre (Tatratea & Kofola)|Slovák libre (Tatratea & Kofola)|alko",
+            "Tradiční Aperol Spritz|Tradičný Aperol Spritz|alko",
+            "Cuba Libre s limetkou|Cuba Libre s limetkou|alko",
+            "Gin Tonic s okurkou|Gin Tonik s uhorkou|alko",
+            "Hřejivý Tatranský čaj|Hrejivý Tatranský čaj|alko",
+
+            // 30 novych receptu a drinku rozdelenych do 5 sekcí:
+            // 1. Obědy (6 položek)
+            "Kuřecí polévka s kapáním|Kuracia polievka s krupicovými haluškami|obed",
+            "Hráškový krém se smetanou|Hráškový krém so smotanou|obed",
+            "Krémová čočková polévka s krutony|Krémová šošovicová polievka s krutónmi|obed",
+            "Znojemský hovězí guláš s rýží|Znojemský hovädzí guláš s ryžou|obed",
+            "Babiččino pečené kuře na másle|Babičkino pečené kura na masle|obed",
+            "Plněný zelný list s mletým masem|Plnený kapustný list s mletým masom|obed",
+
+            // 2. Večeře (6 položek)
+            "Koprová polévka s bramborem|Kôprová polievka s zemiakmi|vecere",
+            "Zelná polévka s uzeninou|Kapustnica s údeninou|vecere",
+            "Lehký těstovinový salát s tuňákem|Ľahký cestovinový šalát s tuniakom|vecere",
+            "Tradiční zapékané toasty se sýrem a šunkou|Tradičné zapekané toasty so syrom a šunkou|vecere",
+            "Domácí vaječná pomazánka na chlebu|Domáca vajíčková nátierka na chlebe|vecere",
+            "Špíz s kuřecím masem a zeleninou|Špíz s kuracím mäsom a zeleninou|vecere",
+
+            // 3. Dezerty a buchty (6 položek)
+            "Maková bábovka s citronovou polevou|Maková bábovka s citrónovou polevou|dezert",
+            "Tradiční kynuté buchty s povidly|Tradičné kysnuté buchty s lekvárom|dezert",
+            "Perník na plech s ořechy|Perník na plech s orechmi|dezert",
+            "Tvarohový koláč s meruňkami|Tvarohový koláč s marhuľami|dezert",
+            "Bublanina s čerstvými třešněmi|Bublanina s čerstvými čerešňami|dezert",
+            "Vanilkové věnečky s krémem|Vanilkové venečky s krémom|dezert",
+
+            // 4. Nápoje (6 položek)
+            "Osvěžující grapefruitová limonáda|Osviežujúca grapefruitová limonáda|piti",
+            "Domácí jahodový ledový koktejl|Domáci jahodový ľadový kokteil|piti",
+            "Ledový zelený čaj s broskví|Ľadový zelený čaj s broskyňou|piti",
+            "Horká čokoláda s chilli a skořicí|Horúca čokoláda s čili a škoricou|piti",
+            "Banánové smoothie s borůvkami|Banánové smoothie s čučoriedkami|piti",
+            "Domácí bezinkový sirup s vodou|Domáci bazový sirup s vodou|piti",
+
+            // 5. Drinky (6 položek)
+            "Tatranský Mojito koktejl|Tatranský Mojito koktail|alko",
+            "Becherovka Sour s citronem|Becherovka Sour s citrónom|alko",
+            "Valašská káva se slivovicí|Valašská káva so slivovicou|alko",
+            "Griotka s horkým jablečným džusem|Griotka s horúcim jablkovým džúsom|alko",
+            "Karlovarská Colada s kokosem|Karlovarská Colada s kokosom|alko",
+            "Česká bloody mary s křenem|Česká krvavá mary s chrenom|alko"
         )
 
-        return rawData.map { line ->
+        val standardRecipes = rawData.map { line ->
             val parts = line.split("|")
             val czTitle = parts[0]
             val skTitle = parts[1]
             val category = parts[2]
+
+            // Game-adapted high-fidelity soup overrides (integrating from recipe_game.py)
+            if (czTitle == "Kuřecí polévka s kapáním") {
+                return@map FeaturedRecipe(
+                    "Kuřecí polévka s kapáním", "Kuracia polievka s krupicovými haluškami", "25 min", 180, "14g", "18g", "6g",
+                    listOf("300g kuřecích skeletů nebo křídel", "1 ks mrkve", "0.5 ks celeru", "1 ks petržele", "2 ks vajec", "4 lžíce dětské krupice na kapání", "sůl a zelená petrželka"),
+                    listOf("300g kuracích skeletov alebo krídel", "1 ks mrkvy", "0.5 ks zeleru", "1 ks petržlenu", "2 ks vajec", "4 lyžice krupice", "soľ, petržlenová vňať"),
+                    false, false, false,
+                    "1. Kuřecí maso a skelety uvařte s kořenovou zeleninou v osolené vodě doměkka (cca 20 minut).\n2. Vývar sceďte, zeleninu i kousky kuřecího masa nakrájejte nadrobno a vraťte do polévky.\n3. Připravte krupicové kapání: rozšlehejte vejce se špetkou soli a postupně přisypávejte dětskou krupici, dokud nevznikne polotekuté těstíčko.\n4. Těstíčko pomalu vlévejte do vroucí polévky přes vidličku nebo hrubé struhadlo, aby vznikly jemné kousky. Povařte 2 minuty a na závěr ozdobte petrželkou.",
+                    "1. Kuracie mäso uvarte s koreňovou zeleninou v osolenej vode (cca 20 minút).\n2. Vývar sceďte, zeleninu aj mäso nakrájajte.\n3. Pripravte cesto na kvapkanie: rozšľahajte vajcia so soľou a krupicou.\n4. Kvapkajte cesto cez vidličku do vařenej polievky, povarte 2 minúty a ozdobte petržlenovou vňaťou.",
+                    20.0, "obed"
+                )
+            }
+            if (czTitle == "Hráškový krém se smetanou") {
+                return@map FeaturedRecipe(
+                    "Hráškový krém se smetanou", "Hráškový krém so smotanou", "15 min", 150, "8g", "20g", "5g",
+                    listOf("400g mraženého nebo čerstvého hrášku", "1 ks šalotky", "40g másla", "150ml smetany na vaření (12%)", "500ml zeleninového vývaru", "sůl, pepř a máta na ozdobu"),
+                    listOf("400g hrášku", "1 ks šalotky", "40g masla", "150ml smotany na varenie (12%)", "500ml zeleninového vývaru", "soľ, korenie a mäta"),
+                    true, false, true,
+                    "1. Na rozpuštěném sádle nebo másle orestujte šalotku dosklovita.\n2. Přidejte sladký hrášek, zalijte teplým zeleninovým vývarem a vařte na mírném ohni pouhých 5 minut (aby hrášek neztratil svou jasně zelenou barvu).\n3. Odstavte z ohně, vlijte smetanu na vaření a rozmixujte tyčovým mixérem dohladka.\n4. Dochuťte solí a bílým pepřem. Podávejte s opečenými krutony, dozdobené lístkem máty.",
+                    "1. Na masle osmažte šalotku.\n2. Pridajte hrášok, zalejte zeleninovým vývarom a varte 5 minút.\n3. Odstavte, vlejte smotanu a rozmixujte tyčovým mixérom dohladka.\n4. Osoľte, okoreňte. Môžete podávať s krutónmi.",
+                    18.0, "obed"
+                )
+            }
+            if (czTitle == "Koprová polévka s bramborem") {
+                return@map FeaturedRecipe(
+                    "Koprová polévka s bramborem", "Kôprová polievka s zemiakmi", "20 min", 210, "6g", "28g", "8g",
+                    listOf("4 ks brambor", "250ml zakysané smetany", "2 lžíce hladké mouky", "1 svazek čerstvého kopru", "2 ks vařených vajec", "1 lžíce másla", "ocet a cukr podle chuti"),
+                    listOf("4 ks zemiakov", "250ml kyslej smotany", "2 lyžice hladkej múky", "čerstvý kôpor", "2 ks uvarených vajec", "maslo, ocot, cukor"),
+                    false, false, true,
+                    "1. Oloupané brambory nakrájejte na kostičky a uvařte je v 700ml osolené vody s drceným kmínem doměkka.\n2. V misce rozšlehejte zakysanou smetanu s hladkou moukou a trochou vody. Za stálého míchání vlijte k bramborám a nechte 8 minut provařit.\n3. Odstavte polévku z plamene, vmíchejte najemno nasekaný čerstvý kopr, lžíci másla a dochuťte octem, solí a cukrem na vyváženou sladkokyselou chuť.\n4. Podávejte s nakrájeným vařeným vejcem natvrdo.",
+                    "1. Nakrájané zemiaky uvarte v osolenej vode.\n2. Rozmiešajte kyslú smotanu s múkou a vlejte k zemiakom, povarte 8 minút.\n3. Odstavte, vmiešajte nasekaný kôpor a maslo, dochuťte octom a cukrom.\n4. Podávajte s uvarenými vajcami.",
+                    22.0, "vecere"
+                )
+            }
+            if (czTitle == "Zelná polévka s uzeninou") {
+                return@map FeaturedRecipe(
+                    "Zelná polévka s uzeninou", "Kapustnica s údeninou", "35 min", 320, "16g", "14g", "22g",
+                    listOf("300g kysaného zelí", "150g kvalitní klobásy nebo uzeného masa", "2 ks brambor", "1 ks cibule", "1 lžíce mleté sladké papriky", "1 lžíce sádla", "1 lžíce mouky", "sůl, pepř a kysaná smetana"),
+                    listOf("300g kyslej kapusty", "150g klobásy alebo údeného mäsa", "2 ks zemiakov", "1 ks cibule", "1 lyžica mletej papriky", "masť, múka, kyslá smotana"),
+                    false, false, false,
+                    "1. Kysané zelí povařte s bobkovým listem a novým kořením ve 400ml vody.\n2. V jiném hrnci uvařte na kostičky nakrájené brambory.\n3. Na sádle orestujte nakrájenou cibuli a klobásu na kolečka, zapraš mletou paprikou a lžící mouky. Krátce osmahněte, zalijte studenou vodou a povařte.\n4. Smíchejte uvařené zelí, uvařené brambory a klobásový základ. Společně povařte 10 minut, dochuťte solí a podávejte s lžící kysané smetany na talíři.",
+                    "1. Kyslú kapustu uvarte s korením vo vode.\n2. Zvlášť uvarte zemiaky nakrájané na kocky.\n3. Na masti osmažte cibuľu, klobásu na kolieska, pridajte mletú papravu a múku, zalejte vodou a prevarte.\n4. Všetko zmiešajte, povarte 10 minút a podávajte s kyslou smotanou.",
+                    25.0, "vecere"
+                )
+            }
+
+            // Dedicated High-Fidelity Overrides for Alcoholic Beverages as requested:
+            if (czTitle.contains("Beton") || czTitle.contains("Betón")) {
+                return@map FeaturedRecipe(
+                    "Beton (Becherovka & Tonic)", "Betón (Becherovka & Tonik)", "3 min", 160, "0g", "12g", "0g",
+                    listOf("50ml bylinného likéru Becherovka Originál", "150ml vychlazeného kvalitního Toniku", "plátek čerstvého citronu", "hrst ledových kostek"),
+                    listOf("50ml bylinného likéru Becherovka Originál", "150ml vychladeného kvalitného Toniku", "plátok citróna", "hrsť ľadových kociek"),
+                    true, true, true,
+                    "1. Do vysoké sklenice nasypte kostky ledu.\n2. Přilijte 50ml bylinného likéru Becherovka.\n3. Dolijte 150ml studeného toniku.\n4. Jemně promíchejte lžící a ozdobte plátkem citronu. Podávejte okamžitě.",
+                    "1. Do vysokého pohára nasypte kocky ľadu.\n2. Prilejte 50ml bylinného likéru Becherovka.\n3. Dolejte 150ml studeného toniku.\n4. Jemne premiešajte lyžicou a ozdobte plátkom citróna.",
+                    32.0, "alko"
+                )
+            }
+            if (czTitle.contains("Bavorák")) {
+                return@map FeaturedRecipe(
+                    "Bavorák (Fernet & Tonic)", "Bavorák (Fernet & Tonik)", "3 min", 150, "0g", "11g", "0g",
+                    listOf("50ml likéru Fernet Stock", "150ml vychlazeného Toniku", "plátek citronu", "kopeček ledu"),
+                    listOf("50ml likéru Fernet Stock", "150ml vychladeného Toniku", "plátok citróna", "kocky ľadu"),
+                    true, true, true,
+                    "1. Sklenici naplňte kostkami ledu.\n2. Nalijte 150ml studeného toniku.\n3. Poté opatrně přes lžičku navrch nalijte 50ml Fernetu tak, aby zůstal na hladině a vytvořil krásný optický předěl.\n4. Před pitím promíchejte a ozdobte plátkem citronu.",
+                    "1. Pohár naplňte kockami ľadu.\n2. Nalejte 150ml studeného toniku.\n3. Potom opatrne cez lyžičku navrch nalejte 50ml Fernetu, aby ostal na hladine.\n4. Ozdobte plátkom citróna.",
+                    30.0, "alko"
+                )
+            }
+            if (czTitle.contains("Božkovská kofola")) {
+                return@map FeaturedRecipe(
+                    "Božkovská kofola (Rum & Kofola)", "Božkovská kofola (Rum & Kofola)", "3 min", 190, "0g", "25g", "0g",
+                    listOf("50ml českého tuzemáku Božkov Originál", "150ml vychlazené Kofoly Originál", "plátek citronu nebo limetky", "led"),
+                    listOf("50ml českého tuzemáku Božkov Originál", "150ml vychladenej Kofoly Originál", "plátok citróna", "ľad"),
+                    true, true, true,
+                    "1. Do sklenice vložte led.\n2. Přidejte 50ml tradičního tuzemského rumu Božkov.\n3. Dolijte ledově vychlazenou Kofolou Originál, která nápoji dodá nezaměnitelnou chuť bylinek a lékořice.\n4. Jemně promíchejte a ozdobte citronem.",
+                    "1. Do pohára vložte ľad.\n2. Pridajte 50ml tradičného tuzemáku Božkov.\n3. Dolejte ľadovo vychladenou Kofolou Originál.\n4. Jemne premiešajte a ozdobte citrónom.",
+                    25.0, "alko"
+                )
+            }
+            if (czTitle.contains("Slovak Libre")) {
+                return@map FeaturedRecipe(
+                    "Slovak Libre (Tatratea & Kofola)", "Slovák libre (Tatratea & Kofola)", "4 min", 220, "0g", "26g", "0g",
+                    listOf("40ml Tatratea Original 52%", "150ml studené Kofoly nebo Coly", "20ml šťávy z limetky", "pár lístků máty na ozdobu", "drcený led"),
+                    listOf("40ml Tatratea Original 52%", "150ml studenej Kofoly alebo Coly", "20ml šťavy z limetky", "lístky mäty", "drvený ľad"),
+                    true, true, true,
+                    "1. Do vysoké sklenice nasypte drcený led a vhoďte lístky máty.\n2. Vymáčkněte čerstvou šťávu z limetky a vlijte do sklenice.\n3. Přidejte 40ml silného bylinného likéru Tatratea 52%.\n4. Pomalu dolijte vychlazenou Kofolou a jemně promíchejte odspodu.",
+                    "1. Do pohára nasypte drvený ľad a lístky mäty.\n2. Vytlačte šťavu z limetky.\n3. Pridajte 40ml silného bylinného likéru Tatratea 52%.\n4. Pomaly dolejte Kofolu a jemne premiešaj.",
+                    42.0, "alko"
+                )
+            }
+            if (czTitle.contains("Aperol Spritz")) {
+                return@map FeaturedRecipe(
+                    "Tradiční Aperol Spritz", "Tradičný Aperol Spritz", "3 min", 140, "0g", "15g", "0g",
+                    listOf("60ml Aperolu", "90ml Prosecca", "30ml sodovky bez příchutě", "plátek pomeranče na ozdobu", "velké ledové kostky"),
+                    listOf("60ml Aperolu", "90ml Prosecca", "30ml sódy", "plátok pomaranča", "ľadové kocky"),
+                    true, true, true,
+                    "1. Velkou sklenici na víno naplňte až po okraj velkými kostkami ledu.\n2. Nalijte 90ml vychlazeného Prosecca.\n3. Krouživým pohybem přilijte 60ml Aperolu (tak zachováte barvu).\n4. Dolijte střikem (30ml) sodovky a jemně jednou promíchejte odspodu. Ozdobte plátkem pomeranče.",
+                    "1. Veľký pohár na víno naplňte ľadom.\n2. Nalejte 90ml vychladeného Prosecca.\n3. Pridajte 60ml Aperolu.\n4. Dolejte 30ml sódy a ozdobte plátkom pomaranča.",
+                    45.0, "alko"
+                )
+            }
+            if (czTitle.contains("Cuba Libre")) {
+                return@map FeaturedRecipe(
+                    "Cuba Libre s limetkou", "Cuba Libre s limetkou", "3 min", 175, "0g", "18g", "0g",
+                    listOf("50ml rumu Captain Morgan nebo Absolut", "150ml vychlazené Coca-Coly", "1/2 čerstvé limetky nakrájené na měsíčky", "hrst ledu"),
+                    listOf("50ml rumu Captain Morgan", "150ml Coca-Coly", "1/2 čerstvej limetky", "ľad"),
+                    true, true, true,
+                    "1. Do vysoké sklenice vymačkejte šťávu ze 2 měsíčků limetky a vhoďte je dovnitř.\n2. Zasypte kostkami ledu.\n3. Nalijte 50ml bílého či kořeněného rumu.\n4. Dolijte studenou Coca-Colou, jemně promíchejte a ozdobte dalším plátkem limetky.",
+                    "1. Do vysokého pohára vytlačte šťavu z limetky a vhoďte mesiačiky dnu.\n2. Nasypte kocky ľadu.\n3. Nalejte 50ml rumu.\n4. Dolejte studenou Coca-Colou a jemne premiešajte.",
+                    38.0, "alko"
+                )
+            }
+            if (czTitle.contains("Gin Tonic") || czTitle.contains("Gin Tonik")) {
+                return@map FeaturedRecipe(
+                    "Gin Tonic s okurkou", "Gin Tonik s uhorkou", "3 min", 155, "0g", "10g", "0g",
+                    listOf("50ml kvalitního Ginu", "150ml prémiového vychlazeného Toniku", "3 plátky čerstvé salátové hadovky", "2 kuličky jalovce", "led"),
+                    listOf("50ml kvalitného Ginu", "150ml prémiového Toniku", "3 plátky čerstvej šalátovej uhorky", "2 guličky borievky", "ľad"),
+                    true, true, true,
+                    "1. Sklenici naplňte ledem.\n2. Po vnitřní straně sklenice rozmístěte tenké plátky okurky.\n3. Nalijte 50ml ginu, přidejte lehce podrcené kuličky jalovce pro zesílení vůně.\n4. Pomalu dolijte tonikem, aby neutekly bublinky, a podávejte.",
+                    "1. Pohár naplňte ľadom.\n2. Vložte plátky šalátovej uhorky.\n3. Nalejte 50ml ginu a zľahka podrvené guličky borievky.\n4. Pomaly dolejte tonikom a podávajte.",
+                    39.0, "alko"
+                )
+            }
+            if (czTitle.contains("Hřejivý Tatranský čaj")) {
+                return@map FeaturedRecipe(
+                    "Hřejivý Tatranský čaj s jablkem", "Hrejivý Tatranský čaj s jablkom", "5 min", 250, "0g", "30g", "0g",
+                    listOf("40ml Tatratea 52%", "150ml horkého jablečného moštu", "1 lžička medu", "svitek skořice", "hřebíček (2 ks)"),
+                    listOf("40ml Tatratea 52%", "150ml horúceho jablkového muštu", "1 lyžička medu", "škorica", "klinčeky"),
+                    true, true, true,
+                    "1. V kastrůlku zahřejte jablečný mošt se skořicí a hřebíčkem na 80 °C.\n2. Do hrnku vlijte 40ml bylinného Tatratea 52%.\n3. Přelijte horkým okořeněným moštem a oslaďte lžičkou medu.\n4. Promíchejte svitkem skořice a vychutnávejte teplé.",
+                    "1. V malom hrnci zohrejte jablkový mušt so škoricou a klinčekmi na 80 °C.\n2. Do hrnčeka vlejte 40ml Tatratea 52%.\n3. Prelejte horúcim muštom a doslaďte medom, premiešajte.",
+                    40.0, "alko"
+                )
+            }
+            if (czTitle.contains("Tatranský Mojito")) {
+                return@map FeaturedRecipe(
+                    "Tatranský Mojito koktejl", "Tatranský Mojito koktail", "4 min", 195, "0g", "20g", "0g",
+                    listOf("40ml Tatratea 52% Peach nebo Original", "150ml sodovky", "2 svazky lístků máty", "1 ks limetky nakrájené na měsíčky", "2 lžičky třtinového cukru", "drcený led"),
+                    listOf("40ml Tatratea 52%", "150ml sódy", "máta", "1 ks limetky", "2 lyžičky trstinového cukru", "drvený ľad"),
+                    true, true, true,
+                    "1. Do vysoké sklenice vložte měsíčky limetky a třtinový cukr. Důkladně je rozdrťte muddlerem (drbátkem).\n2. Přidejte lístky máty, které předtím tlesknutím v dlaních rozvoníte, a drcený led až po okraj.\n3. Nalijte 40ml bylinného Tatratea 52%.\n4. Dolijte sodovkou a odspodu promíchejte dlouhou barmanskou lžící.",
+                    "1. Do vysokého pohára dajte nakrájanú limetku a trstinový cukor, popučte ich.\n2. Pridajte lístky mäty, drvený ľad.\n3. Nalejte 40ml Tatratea 52%.\n4. Dolejte sódou a dobre premiešajte odspodu.",
+                    36.0, "alko"
+                )
+            }
+            if (czTitle.contains("Becherovka Sour")) {
+                return@map FeaturedRecipe(
+                    "Becherovka Sour s citronem", "Becherovka Sour s citrónom", "3 min", 145, "1g", "15g", "0g",
+                    listOf("50ml bylinného likéru Becherovka Originál", "30ml čerstvé citronové šťávy", "20ml cukrového sirupu (1:1)", "1/2 bílku pro sametovou pěnu", "led"),
+                    listOf("50ml Becherovky", "30ml citrónovej šťavy", "20ml cukrového sirupu", "1/2 vaječného bielka", "ľad"),
+                    true, false, true,
+                    "1. Všechny ingredience (Becherovku, citronovou šťávu, cukrový sirup a vaječný bílek) nalijte do shakeru bez ledu. Šejkujte 10 sekund pro vytvoření husté bílkové pěny (dry shake).\n2. Přidejte dostatek ledu a znovu intenzivně šejkujte dalších 10 sekund, dokud shaker neprochladne.\n3. Přes barmanské sítko nalijte do vychlazené sklenice. Ozdobte citronovou kůrou.",
+                    "1. Zmiešajte Becherovku, citrónovú šťavu, sirup a bielok v šejkri bez ľadu a poriadne pretrepte.\n2. Pridajte ľad a znova intenzívne prešejkujte.\n3. Prelejte cez sitko do pohára a ozdobte citrónovou kôrou.",
+                    28.0, "alko"
+                )
+            }
+            if (czTitle.contains("Valašská káva")) {
+                return@map FeaturedRecipe(
+                    "Valašská káva se slivovicí", "Valašská káva so slivovicou", "5 min", 180, "1g", "18g", "4g",
+                    listOf("150ml silné horké černé kávy (espresso nebo překapávaná)", "40ml kvalitní moravské slivovice", "1 lžička třtinového cukru", "3 lžíce vyšlehané polotuhé smetany na ozdobu"),
+                    listOf("150ml horúcej čiernej kávy", "40ml moravskej slivovice", "1 lyžička cukru", "šľahačka"),
+                    true, false, true,
+                    "1. Do sklenice z varného skla dejte lžičku třtinového cukru a zalijte 40ml slivovice.\n2. Připravte horkou černou kávu a opatrně ji vlijte k alkoholu, promíchejte, aby se cukr zcela rozpustil.\n3. Navrch opatrně po stopce lžíce navrstvěte čerstvě ušlehanou smetanu tak, aby zůstala nad kávou.\n4. Kávu pijte přes studenou vrstvu smetany. Pozor, silně hřeje!",
+                    "1. Do pohára z varného skla dajte cukor a slivovicu.\n2. Zalejte čerstvou horúcou kávou a premiešajte, aby sa cukor rozpustil.\n3. Cez vidličku alebo lyžičku navrstvite navrch vyšľahanú smotanu.\n4. Pite cez vrstvu smotany.",
+                    32.0, "alko"
+                )
+            }
+            if (czTitle.contains("Griotka s horkým")) {
+                return@map FeaturedRecipe(
+                    "Griotka s horkým jablečným džusem", "Griotka s horúcim jablkovým džúsom", "5 min", 210, "0g", "28g", "0g",
+                    listOf("50ml třešňového likéru Griotka", "150ml kvalitního jablečného džusu", "svitek skořice", "2 ks hřebíčku", "plátek pomrače"),
+                    listOf("50ml Griotky", "150ml jablkového džúsu", "celá škorica", "klinčeky", "pomaranč"),
+                    true, true, true,
+                    "1. Jablečný džus zahřejte v kastrůlku s celou skořicí a hřebíčkem těsně pod bod varu (cca 80 °C).\n2. Do sklenice z teplovzdorného skla nalijte 50ml Griotky.\n3. Přelijte horkým kořeněným džusem (koření vyjměte).\n4. Ozdobte plátkem pomeranče a podávejte jako skvělý zimní zahřívač.",
+                    "1. Jablkový džús zohrejte so škoricou a klinčekmi těsne pod bod varu.\n2. Do pohára nalejte 50ml Griotky.\n3. Prelejte horúcim džúsom a ozdobte pomarančom.",
+                    22.0, "alko"
+                )
+            }
+            if (czTitle.contains("Karlovarská Colada")) {
+                return@map FeaturedRecipe(
+                    "Karlovarská Colada s kokosem", "Karlovarská Colada s kokosom", "4 min", 190, "1g", "22g", "5g",
+                    listOf("40ml bylinného likéru Becherovka Lemond", "20ml kokosového sirupu nebo mléka", "120ml ananasového džusu", "plátek ananasu", "drcený led"),
+                    listOf("40ml Becherovky Lemond", "20ml kokosového sirupu", "120ml ananásového džúsu", "ananás", "ľad"),
+                    true, true, true,
+                    "1. Shaker naplňte drceným ledem.\n2. Přidejte 40ml Becherovky Lemond, 20ml kokosového sirupu a 120ml ananasového džusu.\n3. Intenzivně šejkujte po dobu 15 sekund.\n4. Nalijte i s ledem do vysoké sklenice Hurricane, ozdobte plátkem ananasu a podávejte se slámkou.",
+                    "1. Šejker naplňte drveným ľadom.\n2. Pridajte Becherovku Lemond, kokosový sirup a ananásový džús.\n3. Intenzívne prešejkujte po dobu 15 sekúnd.\n4. Nalejte do vysokého pohára, ozdobte ananásom.",
+                    34.0, "alko"
+                )
+            }
+            if (czTitle.contains("Česká bloody mary")) {
+                return@map FeaturedRecipe(
+                    "Česká bloody mary s křenem", "Česká krvavá mary s chrenom", "4 min", 165, "2g", "12g", "0g",
+                    listOf("50ml jemné vodky", "150ml chlazeného rajčatového džusu", "15ml čerstvé citronové šťávy", "1 lžička nastrouhaného čerstvého křenu", "pár kapek omáčky Tabasco a Worcestershire", "špetka soli, pepře a celerové soli", "řapíkatý celer k podávání", "led"),
+                    listOf("50ml vodky", "150ml paradajkového džúsu", "15ml citrónovej šťavy", "1 lyžička chrenu", "Tabasco, Worcestershire", "soľ, korenie, zeler"),
+                    true, true, true,
+                    "1. Sklenici naplňte kostkami ledu.\n2. Nalijte 50ml vodky, 150ml rajčatového džusu, citronovou šťávu, přidejte Tabasco, Worcestershire a čerstvě nastrouhaný křen.\n3. Přidejte špetku soli, pepře a celerové soli. Velmi dobře promíchejte dlouhou lžící.\n4. Dozdobte stonkem řapíkatého celeru, který slouží zároveň jako míchátko.",
+                    "1. Pohár naplňte kockami ľadu.\n2. Nalejte vodku, paradajkový džús, citrónovú šťavu, pridajte Tabasco, Worcestershire a nastrúhaný chren.\n3. Pridajte soľ a čierne korenie, poriadne premiešajte.\n4. Ozdobte stonkou zeleru a podávajte.",
+                    31.0, "alko"
+                )
+            }
 
             // Dedicated High-Fidelity Override for Most Popular Iconic Recipes to preserve premium quality and exact kuchařsky správné steps:
             if (czTitle == "Svíčková na smetaně s houskovým knedlíkem" || czTitle == "Svíčková na smetaně") {
@@ -576,6 +827,7 @@ object LocalRecipesProvider {
                 category = category
             )
         }
+        return standardRecipes + getAdditionalDrinks()
     }
 
     private fun getCustomInstructionsCZ(title: String, category: String, ingredients: List<String>): String {
@@ -701,74 +953,1024 @@ object LocalRecipesProvider {
     private fun generateIngredientsCZ(title: String): List<String> {
         val t = title.lowercase()
         val list = mutableListOf<String>()
-        if (t.contains("hovězí") || t.contains("svíčková") || t.contains("roštěná") || t.contains("tatarák") || t.contains("líčka")) list.add("hovězí maso")
-        if (t.contains("vepřov") || t.contains("výpečky") || t.contains("kotlety") || t.contains("bůček") || t.contains("panenka") || t.contains("sekaná") || t.contains("karbanátky")) list.add("vepřové maso")
-        if (t.contains("kuřec") || t.contains("kuře") || t.contains("stripsy")) list.add("kuřecí maso")
+        
+        // 1. Core proteins / bases
+        if (t.contains("hovězí") || t.contains("svíčková") || t.contains("roštěná") || t.contains("líčka") || t.contains("guláš") || t.contains("tatarák")) {
+            list.add("hovězí maso")
+            if (!t.contains("tatarák")) list.add("vývar")
+        }
+        if (t.contains("vepřov") || t.contains("výpečky") || t.contains("kotlety") || t.contains("bůček") || t.contains("panenka") || t.contains("sekaná") || t.contains("karbanátky") || t.contains("řízek") || t.contains("moravský") || t.contains("prejt") || t.contains("jitrnice")) {
+            list.add("vepřové maso")
+        }
+        if (t.contains("kuřec") || t.contains("kuře") || t.contains("stripsy")) {
+            list.add("kuřecí maso")
+        }
         if (t.contains("krůtí")) list.add("krůtí maso")
         if (t.contains("kachna") || t.contains("kachní")) list.add("kachní maso")
         if (t.contains("husa") || t.contains("husí")) list.add("husí maso")
-        if (t.contains("ryb") || t.contains("kapr") || t.contains("pstruh") || t.contains("sumec") || t.contains("candát") || t.contains("filé")) list.add("ryba")
-        if (t.contains("brambor") || t.contains("brambory") || t.contains("bramboráky") || t.contains("cmunda") || t.contains("šišky") || t.contains("lepenic")) list.add("brambory")
-        if (t.contains("zelí") || t.contains("zelňačka") || t.contains("kapustnica")) list.add("zelí")
-        if (t.contains("sýr") || t.contains("hermelín") || t.contains("tvarůžky") || t.contains("nivu")) list.add("sýr")
-        if (t.contains("šunka") || t.contains("šunkofleky") || t.contains("závitek")) list.add("šunka")
-        if (t.contains("slanina") || t.contains("výpečky")) list.add("slanina")
-        if (t.contains("párek") || t.contains("párkem")) list.add("párek")
-        if (t.contains("klobás")) list.add("klobása")
-        if (t.contains("jater") || t.contains("játra") || t.contains("játrovými")) list.add("játra")
-        if (t.contains("houb") || t.contains("hříbk") || t.contains("žampion") || t.contains("kulajda") || t.contains("kuba")) list.add("houby")
-        if (t.contains("zelenina") || t.contains("zelenou") || t.contains("vývar") || t.contains("mrkvi") || t.contains("mrkev") || t.contains("brokolice") || t.contains("květák")) list.add("zelenina")
-        if (t.contains("mák") || t.contains("mákem")) list.add("mák")
-        if (t.contains("tvaroh") || t.contains("žemlovka")) list.add("tvaroh")
-        if (t.contains("vejce") || t.contains("vajíčková") || t.contains("lečo") || t.contains("mozek")) list.add("vejce")
-        if (t.contains("káva")) list.add("káva")
-        if (t.contains("čaj") || t.contains("matcha") || t.contains("šípkový")) list.add("čaj")
-        if (t.contains("limonáda") || t.contains("citronáda") || t.contains("džus") || t.contains("mošt") || t.contains("možito") || t.contains("mojito")) list.add("voda")
-        if (t.contains("čokoláda") || t.contains("kakao")) list.add("mléko")
-        if (t.contains("jablk") || t.contains("jablečný") || t.contains("závin") || t.contains("štrúdl") || t.contains("mošt") || t.contains("žemlovka")) list.add("jablka")
-        if (t.contains("jahod") || t.contains("ostružin") || t.contains("broskv") || t.contains("mango") || t.contains("ovoc")) list.add("ovoce")
-        if (list.size < 3) {
+        if (t.contains("ryb") || t.contains("kapr") || t.contains("pstruh") || t.contains("sumec") || t.contains("candát") || t.contains("filé")) {
+            list.add("ryby")
+            list.add("citron")
+        }
+        
+        // 2. Carbs / Vegetables
+        if (t.contains("brambor") || t.contains("brambory") || t.contains("bramboráky") || t.contains("cmunda") || t.contains("šišky") || t.contains("lepenic") || t.contains("kaší") || t.contains("bramboračka")) {
+            list.add("brambory")
+        }
+        if (t.contains("zelí") || t.contains("zelňačka") || t.contains("kapustnica") || t.contains("segedín")) {
+            list.add("kysané zelí")
+        }
+        if (t.contains("sýr") || t.contains("hermelín") || t.contains("tvarůžky") || t.contains("nivu")) {
+            list.add("sýr Eidam")
+            if (t.contains("hermelín")) list.add("hermelín")
+        }
+        if (t.contains("šunka") || t.contains("šunkofleky") || t.contains("závitek") || t.contains("toasty")) {
+            list.add("šunka")
+        }
+        if (t.contains("slanina") || t.contains("výpečky") || t.contains("špek") || t.contains("šunkofleky") || t.contains("urom")) {
+            list.add("slanina")
+        }
+        if (t.contains("párek") || t.contains("párkem") || t.contains("frankfurtská")) {
+            list.add("párek")
+        }
+        if (t.contains("klobás") || t.contains("zelňačka") || t.contains("zelňačka")) {
+            list.add("klobása")
+        }
+        if (t.contains("jater") || t.contains("játra") || t.contains("játrovými")) {
+            list.add("vepřová játra")
+        }
+        if (t.contains("houb") || t.contains("hříbk") || t.contains("žampion") || t.contains("kulajda") || t.contains("kuba") || t.contains("bramboračka")) {
+            list.add("sušené houby")
+        }
+        if (t.contains("tvaroh") || t.contains("žemlovka") || t.contains("koláč")) {
+            list.add("měkký tvaroh")
+        }
+        if (t.contains("vejce") || t.contains("vajíčková") || t.contains("lečo") || t.contains("věnečky") || t.contains("mozek") || t.contains("bramboračka")) {
+            list.add("čerstvá vejce")
+        }
+        
+        // 3. Desserts, beverages vs savory staples
+        val isDrink = t.contains("čaj") || t.contains("káva") || t.contains("limonáda") || t.contains("džus") || t.contains("mošt") || t.contains("mojito") || t.contains("koktejl") || t.contains("smoothie") || t.contains("piti") || t.contains("alko") || t.contains("sour") || t.contains("colada") || t.contains("griotka")
+        val isDessert = t.contains("bábovka") || t.contains("závin") || t.contains("štrúdl") || t.contains("koláč") || t.contains("perník") || t.contains("buchty") || t.contains("větrník") || t.contains("dort") || t.contains("sladk") || t.contains("laskonky") || t.contains("palačink") || t.contains("kaše") || t.contains("lívanc") || t.contains("vafle") || t.contains("věnečky") || t.contains("dezert") || t.contains("buchty") || t.contains("brioška") || t.contains("pudink")
+        
+        if (isDrink) {
+            if (t.contains("čaj")) list.add("černý čaj")
+            if (t.contains("káva")) list.add("mletá káva")
+            if (t.contains("čokoláda") || t.contains("kakao")) list.add("plnotučné mléko")
+            if (t.contains("pomaranč") || t.contains("pomeranč") || t.contains("limonáda")) {
+                list.add("citron")
+                list.add("cukr")
+            }
+            list.add("voda")
+            if (t.contains("alko") || t.contains("rum") || t.contains("gin") || t.contains("vodka") || t.contains("becherovka") || t.contains("griotka") || t.contains("slivovic") || t.contains("tatratea") || t.contains("sour") || t.contains("drink")) {
+                list.add("alkohol")
+            }
+        } else if (isDessert) {
+            list.add("pšeničná mouka")
+            list.add("krystalový cukr")
+            list.add("polotučné mléko")
+            list.add("čerstvá vejce")
+            list.add("máslo")
+            if (t.contains("mák")) list.add("mletý mák")
+            if (t.contains("jablk") || t.contains("štrúdl") || t.contains("závin")) list.add("čerstvá jablka")
+        } else {
+            // General Savory Meals
+            list.add("sůl")
+            list.add("pepř")
             list.add("cibule")
             list.add("máslo")
-            list.add("sůl")
+            if (t.contains("svíčkov") || t.contains("paprice") || t.contains("rajsk") || t.contains("koprov") || t.contains("omáčk") || t.contains("smotan") || t.contains("smetan") || t.contains("krém") || t.contains("kulajda")) {
+                list.add("smetana na vaření")
+            }
+            if (t.contains("těstovin") || t.contains("špaget") || t.contains("nudle") || t.contains("vlnky") || t.contains("šunkofleky") || t.contains("fleky")) {
+                list.add("těstoviny")
+            }
+            if (t.contains("rýž") || t.contains("rýže") || t.contains("rizoto") || t.contains("plov")) {
+                list.add("rýže")
+            }
+            if (t.contains("česnek") || t.contains("česnečka") || t.contains("topink") || t.contains("guláš") || t.contains("ďábel")) {
+                list.add("česnek")
+            }
+            if (t.contains("guláš") || t.contains("paprice") || t.contains("segedín")) {
+                list.add("mletá sladká paprika")
+            }
         }
-        return list.distinct()
+        
+        while (list.size < 6) {
+            if (isDrink) {
+                list.add("led")
+                list.add("cukr")
+            } else if (isDessert) {
+                list.add("kypřicí prášek")
+                list.add("vanilkový cukr")
+            } else {
+                list.add("hladká mouka")
+                list.add("slunečnicový olej")
+            }
+        }
+        
+        return list.distinct().take(8)
     }
 
     private fun generateIngredientsSK(title: String): List<String> {
         val t = title.lowercase()
         val list = mutableListOf<String>()
-        if (t.contains("hovädz") || t.contains("sviečkov") || t.contains("rošten") || t.contains("tatar") || t.contains("líčka")) list.add("hovädzie mäso")
-        if (t.contains("bravč") || t.contains("výpečky") || t.contains("kotlet") || t.contains("bôčik") || t.contains("panenka") || t.contains("sekan") || t.contains("fašír")) list.add("bravčové mäso")
-        if (t.contains("kurac") || t.contains("kura") || t.contains("stripsy")) list.add("kuracie mäso")
+        
+        // 1. Core proteins / bases
+        if (t.contains("hovädz") || t.contains("sviečkov") || t.contains("rošten") || t.contains("líčka") || t.contains("guláš") || t.contains("tatar")) {
+            list.add("hovädzie mäso")
+            if (!t.contains("tatar")) list.add("vývar")
+        }
+        if (t.contains("bravč") || t.contains("výpečky") || t.contains("kotlet") || t.contains("bôčik") || t.contains("panenka") || t.contains("sekan") || t.contains("fašír") || t.contains("rezeň") || t.contains("sekaná") || t.contains("jaternica") || t.contains("klobás")) {
+            list.add("bravčové mäso")
+        }
+        if (t.contains("kurac") || t.contains("kura") || t.contains("stripsy")) {
+            list.add("kuracie mäso")
+        }
         if (t.contains("morč")) list.add("morčacie mäso")
         if (t.contains("kač")) list.add("kačacie mäso")
         if (t.contains("hus")) list.add("husacie mäso")
-        if (t.contains("ryb") || t.contains("kapor") || t.contains("pstruh") || t.contains("sumec") || t.contains("zubáč") || t.contains("filé")) list.add("ryba")
-        if (t.contains("zemiak") || t.contains("placky") || t.contains("šišky") || t.contains("lepenic")) list.add("zemiaky")
-        if (t.contains("kapust") || t.contains("kapustnica")) list.add("kapusta")
-        if (t.contains("syr") || t.contains("hermelín") || t.contains("tvarôžk") || t.contains("nivou")) list.add("syr")
-        if (t.contains("šunka") || t.contains("šunkofleky") || t.contains("závitok")) list.add("šunka")
-        if (t.contains("slanina") || t.contains("výpečky")) list.add("slanina")
-        if (t.contains("párok") || t.contains("párkom")) list.add("párok")
-        if (t.contains("klobás")) list.add("klobása")
-        if (t.contains("pečeň") || t.contains("játra") || t.contains("pečeňový")) list.add("pečeň")
-        if (t.contains("hub") || t.contains("dubák") || t.contains("šampiňón") || t.contains("kulajda") || t.contains("kuba")) list.add("huby")
-        if (t.contains("zelenina") || t.contains("vývar") || t.contains("mrkv") || t.contains("brokolic") || t.contains("karfiol")) list.add("zelenina")
-        if (t.contains("mak") || t.contains("makom")) list.add("mak")
-        if (t.contains("tvaroh") || t.contains("žemľovka")) list.add("tvaroh")
-        if (t.contains("vajc") || t.contains("nátierka") || t.contains("lečo") || t.contains("mozog")) list.add("vajce")
-        if (t.contains("káva")) list.add("káva")
-        if (t.contains("čaj") || t.contains("matcha") || t.contains("šípkov")) list.add("čaj")
-        if (t.contains("limonád") || t.contains("citrónád") || t.contains("džús") || t.contains("mušt") || t.contains("mojito")) list.add("voda")
-        if (t.contains("čokolád") || t.contains("kakao")) list.add("mlieko")
-        if (t.contains("jablk") || t.contains("závin") || t.contains("štrúdl") || t.contains("mušt") || t.contains("žemľovka")) list.add("jablká")
-        if (t.contains("jahod") || t.contains("ostružin") || t.contains("brosky") || t.contains("mango") || t.contains("ovoc")) list.add("ovocie")
-        if (list.size < 3) {
+        if (t.contains("ryb") || t.contains("kapor") || t.contains("pstruh") || t.contains("sumec") || t.contains("zubáč") || t.contains("filé")) {
+            list.add("ryby")
+            list.add("citrón")
+        }
+        
+        // 2. Carbs / Vegetables
+        if (t.contains("zemiak") || t.contains("placky") || t.contains("šišky") || t.contains("lepenic") || t.contains("kašou") || t.contains("lokše") || t.contains("zemiaková")) {
+            list.add("zemiaky")
+        }
+        if (t.contains("kapust") || t.contains("kapustnica") || t.contains("segedín")) {
+            list.add("kyslá kapusta")
+        }
+        if (t.contains("syr") || t.contains("hermelín") || t.contains("tvarôžk") || t.contains("nivou")) {
+            list.add("syr Eidam")
+            if (t.contains("hermelín")) list.add("hermelín")
+        }
+        if (t.contains("šunka") || t.contains("šunkofleky") || t.contains("závitok") || t.contains("toasty")) {
+            list.add("šunka")
+        }
+        if (t.contains("slanina") || t.contains("výpečky") || t.contains("špek") || t.contains("šunkofleky")) {
+            list.add("slanina")
+        }
+        if (t.contains("párok") || t.contains("párkom")) {
+            list.add("párok")
+        }
+        if (t.contains("klobás") || t.contains("kapustnica")) {
+            list.add("klobása")
+        }
+        if (t.contains("pečeň") || t.contains("játra") || t.contains("pečeňový")) {
+            list.add("bravčová pečeň")
+        }
+        if (t.contains("hub") || t.contains("dubák") || t.contains("šampiňón") || t.contains("kulajda") || t.contains("kuba") || t.contains("zemiaková")) {
+            list.add("sušené huby")
+        }
+        if (t.contains("tvaroh") || t.contains("žemľovka") || t.contains("koláč")) {
+            list.add("jemný tvaroh")
+        }
+        if (t.contains("vajc") || t.contains("nátierka") || t.contains("lečo") || t.contains("venečky") || t.contains("mozog") || t.contains("zemiaková")) {
+            list.add("čerstvé vajcia")
+        }
+        
+        // 3. Desserts, beverages vs savory staples
+        val isDrink = t.contains("čaj") || t.contains("káva") || t.contains("limonád") || t.contains("džús") || t.contains("mušt") || t.contains("mojito") || t.contains("koktejl") || t.contains("smoothie") || t.contains("piti") || t.contains("alko") || t.contains("sour") || t.contains("colada") || t.contains("griotka")
+        val isDessert = t.contains("bábovka") || t.contains("závin") || t.contains("štrúdl") || t.contains("koláč") || t.contains("perník") || t.contains("buchty") || t.contains("větrník") || t.contains("dort") || t.contains("sladk") || t.contains("laskonky") || t.contains("palacink") || t.contains("kaša") || t.contains("dolk") || t.contains("wafle") || t.contains("venečky") || t.contains("dezert") || t.contains("buchty") || t.contains("brioška") || t.contains("pudink")
+        
+        if (isDrink) {
+            if (t.contains("čaj")) list.add("čierny čaj")
+            if (t.contains("káva")) list.add("mletá káva")
+            if (t.contains("čokolád") || t.contains("kakao")) list.add("plnotučné mlieko")
+            if (t.contains("pomaranč") || t.contains("limonád")) {
+                list.add("citrón")
+                list.add("cukor")
+            }
+            list.add("voda")
+            if (t.contains("alko") || t.contains("rum") || t.contains("gin") || t.contains("vodka") || t.contains("becherovka") || t.contains("griotka") || t.contains("slivovic") || t.contains("tatratea") || t.contains("sour") || t.contains("drink")) {
+                list.add("alkohol")
+            }
+        } else if (isDessert) {
+            list.add("pšeničná múka")
+            list.add("kryštálový cukor")
+            list.add("polotučné mlieko")
+            list.add("čerstvé vajcia")
+            list.add("maslo")
+            if (t.contains("mak")) list.add("mletý mak")
+            if (t.contains("jablk") || t.contains("štrúdl") || t.contains("závin")) list.add("čerstvé jablká")
+        } else {
+            // General Savory Meals
+            list.add("soľ")
+            list.add("korenie")
             list.add("cibuľa")
             list.add("maslo")
-            list.add("soľ")
+            if (t.contains("sviečkov") || t.contains("paprike") || t.contains("rajsk") || t.contains("kôprov") || t.contains("omáčk") || t.contains("smotan") || t.contains("smetan") || t.contains("krém") || t.contains("kulajda")) {
+                list.add("smotana na varenie")
+            }
+            if (t.contains("cestovin") || t.contains("špaget") || t.contains("rezanc") || t.contains("šunkofleky") || t.contains("fleky")) {
+                list.add("cestoviny")
+            }
+            if (t.contains("ryž") || t.contains("ryža") || t.contains("rizoto") || t.contains("plov")) {
+                list.add("ryža")
+            }
+            if (t.contains("cesnak") || t.contains("cesnačka") || t.contains("hriank") || t.contains("guláš") || t.contains("diabol")) {
+                list.add("cesnak")
+            }
+            if (t.contains("guláš") || t.contains("paprike") || t.contains("segedín")) {
+                list.add("mletá sladká paprika")
+            }
         }
-        return list.distinct()
+        
+        while (list.size < 6) {
+            if (isDrink) {
+                list.add("ľad")
+                list.add("cukor")
+            } else if (isDessert) {
+                list.add("kypriaci prášok")
+                list.add("vanilkový cukor")
+            } else {
+                list.add("hladká múka")
+                list.add("slnečnicový olej")
+            }
+        }
+        
+        return list.distinct().take(8)
+    }
+
+    private fun getAdditionalDrinks(): List<FeaturedRecipe> {
+        return listOf(
+            FeaturedRecipe(
+                czTitle = "Klasické Mojito",
+                skTitle = "Klasické Mojito",
+                time = "5 min",
+                calories = 150,
+                protein = "0g",
+                carbs = "15g",
+                fat = "0g",
+                ingredientsCZ = listOf("50ml bílého rumu", "6-8 lístků máty", "1/2 limetky na měsíčky", "2 lžičky třtinového cukru", "sodovka k dolití", "drcený led"),
+                ingredientsSK = listOf("50ml bieleho rumu", "6-8 lístkov mäty", "1/2 limetky", "2 lyžičky trstinového cukru", "sóda na doliatie", "drvený ľad"),
+                isGlutenFree = true, isVegan = true, isVegetarian = true,
+                instructionsCZ = "1. Vložte měsíčky limetky a cukr do vysoké sklenice a jemně poddrťte barmanským tloučkem.\n2. V dlaních tleskněte mátu, přidejte do sklenice, vsypte drcený led až po okraj.\n3. Přidejte bílý rum a dolijte sodovkou. Lehce promíchejte dlouhou barmanskou lžící odspodu nahoru.",
+                instructionsSK = "1. Vložte limetku a cukor do vysokého pohára a jemne popučte.\n2. V dlaniach tlesknite mätu, dajte do pohára, doplňte drvený ľad.\n3. Nalejte biely rum a dolejte sódou. Jemne premiešajte barmanskou lyžicou.",
+                basePrice = 45.0,
+                category = "alko",
+                descriptionCZ = "Osvěžující kubánská klasika s vůní máty a limetky.",
+                descriptionSK = "Osviežujúca kubánska klasika s vôňou mäty a limetky.",
+                glassCZ = "Highball sklenice", glassSK = "Highball pohár",
+                difficultyCZ = "Začátečník", difficultySK = "Začiatočník",
+                alcoholStrengthCZ = "Střední", alcoholStrengthSK = "Stredný",
+                alcoholVol = "12%",
+                alcoholType = "Rum",
+                drinkCategory = "Klasické koktejly, Letní drinky, Long drinky",
+                garnishCZ = "Snítka máty a plátek limetky", garnishSK = "Snítka mäty a plátok limetky"
+            ),
+            FeaturedRecipe(
+                czTitle = "Piña Colada",
+                skTitle = "Piña Colada",
+                time = "5 min",
+                calories = 230,
+                protein = "1g",
+                carbs = "32g",
+                fat = "8g",
+                ingredientsCZ = listOf("50ml bílého rumu", "30ml kokosového krému (nebo sirupu)", "90ml ananasového džusu", "10ml čerstvé limetkové šťávy", "led"),
+                ingredientsSK = listOf("50ml bieleho rumu", "30ml kokosového krému", "90ml ananásového džúsu", "10ml limetkovej šťavy", "ľad"),
+                isGlutenFree = true, isVegan = false, isVegetarian = true,
+                instructionsCZ = "1. Nalijte bílý rum, kokosový krém, ananasový džus a limetkovou šťávu do barmanského shakeru nebo blenderu s ledem.\n2. Mixujte či šejkujte cca 15 sekund pro vytvoření nadýchané sametové konzistence.\n3. Přelijte do sklenice, poprašte strouhaným kokosem a ozdobte.",
+                instructionsSK = "1. Nalejte biely rum, kokosový krém, ananásový džús a limetkovú šťavu do mixéra alebo šejkra s ľadom.\n2. Mixujte alebo šejkujte cca 15 sekúnd do krémova.\n3. Prelejte do pohára a ozdobte.",
+                basePrice = 50.0,
+                category = "alko",
+                descriptionCZ = "Karibský sladký koktejl s kokosovou vůní a plnou chutí ananasu.",
+                descriptionSK = "Karibský sladký kokteil s kokosovou vôňou a plnou chuťou ananásu.",
+                glassCZ = "Hurricane sklenice", glassSK = "Pohár Hurricane",
+                difficultyCZ = "Začátečník", difficultySK = "Začiatočník",
+                alcoholStrengthCZ = "Střední", alcoholStrengthSK = "Stredný",
+                alcoholVol = "10%",
+                alcoholType = "Rum",
+                drinkCategory = "Klasické koktejly, Letní drinky",
+                garnishCZ = "Plátek čerstvého ananasu a koktejlová třešeň", garnishSK = "Plátok ananásu a čerešnička"
+            ),
+            FeaturedRecipe(
+                czTitle = "Cuba Libre",
+                skTitle = "Cuba Libre",
+                time = "3 min",
+                calories = 140,
+                protein = "0g",
+                carbs = "15g",
+                fat = "0g",
+                ingredientsCZ = listOf("50ml tmavého nebo světlého rumu", "120ml Coca-Coly", "15ml čerstvé limetkové šťávy", "led"),
+                ingredientsSK = listOf("50ml tmavého alebo bieleho rumu", "120ml Coca-Coly", "15ml limetkovej šťavy", "ľad"),
+                isGlutenFree = true, isVegan = true, isVegetarian = true,
+                instructionsCZ = "1. Vysokou sklenici naplňte kostkami ledu.\n2. Přidejte vymačkanou šťávu z limetky a rum.\n3. Dolijte Coca-Colou a jemně barmanskou lžičkou promíchejte.",
+                instructionsSK = "1. Vysoký pohár naplňte kockami ľadu.\n2. Pridajte vytlačenú šťavu z limetky a rum.\n3. Dolejte Coca-Colou a jemne premiešajte.",
+                basePrice = 40.0,
+                category = "alko",
+                descriptionCZ = "Legendární kubánská osvěžující změs rumu, kyselé limetky a coly.",
+                descriptionSK = "Legendárna kubánska zmes rumu, limetky a koly.",
+                glassCZ = "Highball sklenice", glassSK = "Highball pohár",
+                difficultyCZ = "Začátečník", difficultySK = "Začiatočník",
+                alcoholStrengthCZ = "Střední", alcoholStrengthSK = "Stredný",
+                alcoholVol = "11%",
+                alcoholType = "Rum",
+                drinkCategory = "Klasické koktejly, Long drinky",
+                garnishCZ = "Plátek či měsíček limetky", garnishSK = "Plátok limetky"
+            ),
+            FeaturedRecipe(
+                czTitle = "Classic Daiquiri",
+                skTitle = "Classic Daiquiri",
+                time = "3 min",
+                calories = 120,
+                protein = "0g",
+                carbs = "8g",
+                fat = "0g",
+                ingredientsCZ = listOf("50ml bílého rumu", "25ml čerstvé limetkové šťávy", "15ml cukrového sirupu", "led"),
+                ingredientsSK = listOf("50ml bieleho rumu", "25ml limetkovej šťavy", "15ml cukrového sirupu", "ľad"),
+                isGlutenFree = true, isVegan = true, isVegetarian = true,
+                instructionsCZ = "1. Všechny ingredience nalijte do shakeru naplněného ledem.\n2. Intenzivně šejkujte cca 10-15 sekund pro důkladné promíchání a vychlazení.\n3. Sceďte přes barové sítko do vychlazené sklenice Coupette.",
+                instructionsSK = "1. Všetky ingrediencie nalejte do šejkra s ľadom.\n2. Intenzívne šejkujte cca 10-15 sekúnd do prechladnutia.\n3. Sceďte cez sitko do studeného pohára typu Coupette.",
+                basePrice = 45.0,
+                category = "alko",
+                descriptionCZ = "Elegantní kyslo-sladká barová legenda z barmanského zlatého věku.",
+                descriptionSK = "Elegantná kyslo-sladká barová legenda zo zlatého veku barmanov.",
+                glassCZ = "Coupette sklenice", glassSK = "Pohár Coupette",
+                difficultyCZ = "Pokročilý", difficultySK = "Pokročilý",
+                alcoholStrengthCZ = "Střední", alcoholStrengthSK = "Stredný",
+                alcoholVol = "15%",
+                alcoholType = "Rum",
+                drinkCategory = "Klasické koktejly",
+                garnishCZ = "Kolečko čerstvé limetky", garnishSK = "Koliesko limetky"
+            ),
+            FeaturedRecipe(
+                czTitle = "Mai Tai",
+                skTitle = "Mai Tai",
+                time = "5 min",
+                calories = 210,
+                protein = "0g",
+                carbs = "14g",
+                fat = "0g",
+                ingredientsCZ = listOf("40ml tmavého jamajského rumu", "20ml bílého rumu", "15ml pomerančového likéru Triple Sec", "15ml mandlového sirupu Orgeat", "10ml čerstvé limetkové šťávy", "led"),
+                ingredientsSK = listOf("40ml tmavého rumu", "20ml bieleho rumu", "15ml Triple Sec likéru", "15ml mandľového sirupu Orgeat", "10ml limetkovej šťavy", "ľad"),
+                isGlutenFree = true, isVegan = true, isVegetarian = true,
+                instructionsCZ = "1. Shaker naplňte ledem, přidejte bílý rum, Triple Sec, sirup Orgeat and limetkovou šťávu.\n2. Dobře protřepejte a sceďte do sklenice plné drceného ledu.\n3. Navrch opatrně nalijte tmavý rum (vytvoří plovoucí tmavou vrstvu).",
+                instructionsSK = "1. Šejker naplňte ľadom, pridajte biely rum, Triple Sec, Orgeat a limetkovú šťavu.\n2. Prešejkujte a nalejte do pohára s drveným ľadom.\n3. Navrch nalejte tmavý rum, aby vytvoril plávajúcu vrstvu.",
+                basePrice = 55.0,
+                category = "alko",
+                descriptionCZ = "Král polynéských Tiki drinků s mandlovým nádechem a dvěma druhy rumu.",
+                descriptionSK = "Kráľ polynézskychn Tiki drinkov s mandľovým nádychom a dvoma druhmi rumu.",
+                glassCZ = "Double Old Fashioned", glassSK = "Pohár Double Old Fashioned",
+                difficultyCZ = "Masterchef", difficultySK = "Masterchef",
+                alcoholStrengthCZ = "Silný", alcoholStrengthSK = "Silný",
+                alcoholVol = "18%",
+                alcoholType = "Rum",
+                drinkCategory = "Klasické koktejly, Letní drinky",
+                garnishCZ = "Snítka čerstvé máty a limetková kůra", garnishSK = "Snítka mäty a limetková kôra"
+            ),
+            FeaturedRecipe(
+                czTitle = "Classic Margarita",
+                skTitle = "Classic Margarita",
+                time = "4 min",
+                calories = 135,
+                protein = "0g",
+                carbs = "9g",
+                fat = "0g",
+                ingredientsCZ = listOf("50ml Tequily (Blanco)", "20ml pomerančového likéru Cointreau", "15ml čerstvé limetkové šťávy", "hrubá sůl na lem", "led"),
+                ingredientsSK = listOf("50ml Tequily", "20ml pomerančového likéru Cointreau", "15ml limetkovej šťavy", "soľ na okraj pohára", "ľad"),
+                isGlutenFree = true, isVegan = true, isVegetarian = true,
+                instructionsCZ = "1. Okraj sklenice potřete limetkou a jemně namočte do hrubé soli pro slaný okraj.\n2. Všechny suroviny nalijte do shakeru s ledem a silně protřepejte.\n3. Opatrně sceďte do připravené sklenice tak, abyste neporušili slaný lem.",
+                instructionsSK = "1. Okraj pohára prejdite limetkou a namočte do soli pro slaný okraj.\n2. Všetky ingrediencie dajte do šejkra s ľadom a vyšejkujte.\n3. Sceďte do pripraveného pohára.",
+                basePrice = 50.0,
+                category = "alko",
+                descriptionCZ = "Legendární mexický nápoj s vyváženou slanou, kyselou a citrusovou chutí.",
+                descriptionSK = "Legendárny mexický nápoj s vyváženou slanou, kyslou a citrusovou chuťou.",
+                glassCZ = "Margarita sklenice", glassSK = "Pohár na Margaritu",
+                difficultyCZ = "Pokročilý", difficultySK = "Pokročilý",
+                alcoholStrengthCZ = "Silný", alcoholStrengthSK = "Silný",
+                alcoholVol = "18%",
+                alcoholType = "Tequila",
+                drinkCategory = "Klasické koktejly",
+                garnishCZ = "Plátek limetky a slaný lem", garnishSK = "Slaný okraj a plátok limetky"
+            ),
+            FeaturedRecipe(
+                czTitle = "Tequila Sunrise",
+                skTitle = "Tequila Sunrise",
+                time = "4 min",
+                calories = 180,
+                protein = "1g",
+                carbs = "22g",
+                fat = "0g",
+                ingredientsCZ = listOf("50ml Tequily (Silver / Blanco)", "120ml čerstvého pomerančového džusu", "15ml sirupu Grenadina", "led"),
+                ingredientsSK = listOf("50ml Tequily", "120ml pomarančového džúsu", "15ml sirupu Grenadina", "ľad"),
+                isGlutenFree = true, isVegan = true, isVegetarian = true,
+                instructionsCZ = "1. Sklenici naplňte kostkami ledu a nalijte do ní tequilu s pomerančovým džusem. Zamíchejte.\n2. Pomalu po stěně sklenice přilijte Grenadinu, která klesne na dno a vytvoří efekt východu slunce.\n3. Podávejte bez míchání se slámkou.",
+                instructionsSK = "1. Pohár osypejte ľadom, nalejte tequilu a pomarančový džús, premiešajte.\n2. Po stene pomaly nalejte sirup Grenadina, klesne na dno a vytvorí efekt úsvitu.\n3. Nemiešajte.",
+                basePrice = 48.0,
+                category = "alko",
+                descriptionCZ = "Poutavý letní long drink imitující barvy ranního slunce.",
+                descriptionSK = "Pútavý letný long drink imitujúci farby ranného slnka.",
+                glassCZ = "Highball sklenice", glassSK = "Vysoký pohár Highball",
+                difficultyCZ = "Začátečník", difficultySK = "Začiatočník",
+                alcoholStrengthCZ = "Střední", alcoholStrengthSK = "Stredný",
+                alcoholVol = "11%",
+                alcoholType = "Tequila",
+                drinkCategory = "Klasické koktejly, Letní drinky, Long drinky",
+                garnishCZ = "Plátek pomeranče a třešnička", garnishSK = "Plátok pomaranča a čerešnička"
+            ),
+            FeaturedRecipe(
+                czTitle = "Paloma",
+                skTitle = "Paloma",
+                time = "3 min",
+                calories = 130,
+                protein = "0g",
+                carbs = "11g",
+                fat = "0g",
+                ingredientsCZ = listOf("50ml Tequily (Blanco)", "15ml čerstvé limetkové šťávy", "100ml grepové limonády", "špetka soli", "led"),
+                ingredientsSK = listOf("50ml Tequily", "15ml limetkovej šťavy", "100ml grepovej limonády", "štipka soli", "ľad"),
+                isGlutenFree = true, isVegan = true, isVegetarian = true,
+                instructionsCZ = "1. Vysokou sklenici naplňte ledem, osolte lehce okraj.\n2. Nalijte tequilu, limetkovou šťávu a navrch doplňte grepovou sodovkou.\n3. Lehce promíchejte.",
+                instructionsSK = "1. Vysoký pohár naplňte ľadom, urobte jemný soľný okraj.\n2. Nalejte tequilu, limetkovú šťavu a dolejte grepovou sódou.\n3. Zľahka premiešajte.",
+                basePrice = 48.0,
+                category = "alko",
+                descriptionCZ = "Nejoblíbenější osvěžující tequilový drink v celém Mexiku.",
+                descriptionSK = "Najoblúbenejší osviežujúci tequilový drink v celom Mexiku.",
+                glassCZ = "Highball sklenice", glassSK = "Highball pohár",
+                difficultyCZ = "Začátečník", difficultySK = "Začiatočník",
+                alcoholStrengthCZ = "Střední", alcoholStrengthSK = "Stredný",
+                alcoholVol = "12%",
+                alcoholType = "Tequila",
+                drinkCategory = "Klasické koktejly, Letní drinky, Long drinky",
+                garnishCZ = "Růžový grep a snítka rozmarýnu", garnishSK = "Ružový grep a rozmarín"
+            ),
+            FeaturedRecipe(
+                czTitle = "Classic Negroni",
+                skTitle = "Classic Negroni",
+                time = "3 min",
+                calories = 190,
+                protein = "0g",
+                carbs = "12g",
+                fat = "0g",
+                ingredientsCZ = listOf("30ml suchého ginu", "30ml sladkého červeného vermutu", "30ml italského bitteru Campari", "velká kostka ledu"),
+                ingredientsSK = listOf("30ml suchého ginu", "30ml červeného sladkého vermutu", "30ml bitteru Campari", "ľad"),
+                isGlutenFree = true, isVegan = true, isVegetarian = true,
+                instructionsCZ = "1. Sklenici naplňte ledem (ideálně jednou velkou stabilní barmanskou kostkou).\n2. Nalijte gin, vermut a hořký likér Campari v poměru 1:1:1.\n3. Míchejte barmanskou lžící po dobu 20-30 sekund k dokonalému propojení a vychlazení.",
+                instructionsSK = "1. Do pohára s ľadom (ideálne jednou veľkou kockou) dajte gin, červený vermut a Campari.\n2. Veľmi dobre miešajte barmanskou lyžicou po dobu 20-30 sekúnd.",
+                basePrice = 60.0,
+                category = "alko",
+                descriptionCZ = "Nekompromisní, dry a hořkosladký italský král aperitivů.",
+                descriptionSK = "Nekompromisný, suchý a horkosladký taliansky kráľ aperitívov.",
+                glassCZ = "Old Fashioned sklenice", glassSK = "Pohár Rocks / Old Fashioned",
+                difficultyCZ = "Začátečník", difficultySK = "Začiatočník",
+                alcoholStrengthCZ = "Silný", alcoholStrengthSK = "Silný",
+                alcoholVol = "24%",
+                alcoholType = "Gin",
+                drinkCategory = "Klasické koktejly",
+                garnishCZ = "Pomerančová kůra nebo plátek pomeranče", garnishSK = "Pomarančová kôra"
+            ),
+            FeaturedRecipe(
+                czTitle = "Gin Tonic",
+                skTitle = "Gin Tonik",
+                time = "3 min",
+                calories = 125,
+                protein = "0g",
+                carbs = "7g",
+                fat = "0g",
+                ingredientsCZ = listOf("50ml suchého ginu", "150ml kvalitního toniku", "plátky salátové okurky", "kostky ledu"),
+                ingredientsSK = listOf("50ml suchého ginu", "150ml toniku", "uhorka", "ľad"),
+                isGlutenFree = true, isVegan = true, isVegetarian = true,
+                instructionsCZ = "1. Vysokou sklenici naplňte čerstvým ledem.\n2. Nalijte kvalitní gin a pomalu zalijte vychlazeným tonikem po stěně, abyste neztratili drahocenné bublinky.\n3. Jemně vložte okurkový plátek nebo spirálu.",
+                instructionsSK = "1. Vysoký pohár naplňte ľadom.\n2. Nalejte suchý gin a pomaly dolejte vychladeným tonikom.\n3. Pridajte plátky uhorky.",
+                basePrice = 42.0,
+                category = "alko",
+                descriptionCZ = "Klasické bylinné spojení jalovcového ginu a hořkého tonikového chininu.",
+                descriptionSK = "Klasické bylinné spojenie jalovcového ginu a horkého tonikového chinínu.",
+                glassCZ = "Highball sklenice", glassSK = "Highball pohár",
+                difficultyCZ = "Začátečník", difficultySK = "Začiatočník",
+                alcoholStrengthCZ = "Střední", alcoholStrengthSK = "Stredný",
+                alcoholVol = "12%",
+                alcoholType = "Gin",
+                drinkCategory = "Klasické koktejly, Letní drinky, Long drinky",
+                garnishCZ = "Plátek čerstvé okurky nebo limetka", garnishSK = "Plátky uhorky alebo limetka"
+            ),
+            FeaturedRecipe(
+                czTitle = "Tom Collins",
+                skTitle = "Tom Collins",
+                time = "4 min",
+                calories = 130,
+                protein = "0g",
+                carbs = "9g",
+                fat = "0g",
+                ingredientsCZ = listOf("50ml ginu", "25ml citronové šťávy", "15ml cukrového sirupu", "100ml sodovky", "led"),
+                ingredientsSK = listOf("50ml ginu", "25ml citrónovej šťavy", "15ml cukrového sirupu", "100ml sódy", "ľad"),
+                isGlutenFree = true, isVegan = true, isVegetarian = true,
+                instructionsCZ = "1. Do vysoké sklenice s ledem přidejte gin, citronovou šťávu a cukrový sirup.\n2. Dobře barmanskou lžící promíchejte odspodu.\n3. Dolijte sodovou vodou a dozdobte.",
+                instructionsSK = "1. Do vysokého pohára s ľadom nalejte gin, citrónovú šťavu a sirup.\n2. Dobre premiešajte.\n3. Dolejte sódou a ozdobte citrónom.",
+                basePrice = 45.0,
+                category = "alko",
+                descriptionCZ = "Svěží, citronová a perlivá ginová alternativa s limetkou a sladkým sirupem.",
+                descriptionSK = "Svieža a šumivá ginová alternatíva s limetkou a sladkým sirupom.",
+                glassCZ = "Collins sklenice", glassSK = "Pohár Collins",
+                difficultyCZ = "Začátečník", difficultySK = "Začiatočník",
+                alcoholStrengthCZ = "Střední", alcoholStrengthSK = "Stredný",
+                alcoholVol = "11%",
+                alcoholType = "Gin",
+                drinkCategory = "Klasické koktejly, Long drinky, Letní drinky",
+                garnishCZ = "Plátek citronu a marasca třešeň", garnishSK = "Plátok citróna"
+            ),
+            FeaturedRecipe(
+                czTitle = "Classic Dry Martini",
+                skTitle = "Classic Dry Martini",
+                time = "3 min",
+                calories = 110,
+                protein = "0g",
+                carbs = "1g",
+                fat = "0g",
+                ingredientsCZ = listOf("60ml suchého ginu", "10ml suchého bílého vermutu", "zelená oliva", "led pro vymíchání"),
+                ingredientsSK = listOf("60ml suchého ginu", "10ml suchého vermutu", "zelená oliva", "ľad"),
+                isGlutenFree = true, isVegan = true, isVegetarian = true,
+                instructionsCZ = "1. Nalijte gin a suchý vermut do míchací sklenice naplněné kostkami ledu.\n2. Barmanskou lžící jemně míchejte cca 30 sekund (netřepat, aby drink nezakalil).\n3. Sceďte do namražené Martini sklenice bez ledu.",
+                instructionsSK = "1. Nalejte gin a suchý vermut do miešacieho pohára s ľadom.\n2. Dobre miešajte cca 30 sekúnd.\n3. Prelejte do mrazom chladeného pohára na Martini.",
+                basePrice = 55.0,
+                category = "alko",
+                descriptionCZ = "Nejsofistikovanější, silný, suchý elegantní barový standard.",
+                descriptionSK = "Najsofistikovanejší, suchý a elegantný barový štandard.",
+                glassCZ = "Martini sklenice", glassSK = "Martini pohár",
+                difficultyCZ = "Pokročilý", difficultySK = "Pokročilý",
+                alcoholStrengthCZ = "Silný", alcoholStrengthSK = "Silný",
+                alcoholVol = "32%",
+                alcoholType = "Gin",
+                drinkCategory = "Klasické koktejly",
+                garnishCZ = "Zelená oliva na barmanské špejli", garnishSK = "Zelená oliva"
+            ),
+            FeaturedRecipe(
+                czTitle = "Cosmopolitan",
+                skTitle = "Cosmopolitan",
+                time = "4 min",
+                calories = 140,
+                protein = "0g",
+                carbs = "11g",
+                fat = "0g",
+                ingredientsCZ = listOf("40ml citronové vodky", "15ml brusinkového džusu", "15ml likéru Cointreau", "15ml čerstvé limetkové šťávy", "led"),
+                ingredientsSK = listOf("40ml citrónovej vodky", "15ml brusnicového džúsu", "15ml likéru Cointreau", "15ml limetkovej šťavy", "ľad"),
+                isGlutenFree = true, isVegan = true, isVegetarian = true,
+                instructionsCZ = "1. Všechny tekuté ingredience odměřte do shakeru s ledem.\n2. Energicky protřepejte po dobu 10-15 sekund pro skvělé prohřátí a napěnění.\n3. Dvakrát sceďte přes barové sítko do elegantní Martini sklenice.",
+                instructionsSK = "1. Všetky ingrediencie dajte do šejkra s ľadom.\n2. Rázne pretrepávajte cca 12 sekúnd.\n3. Preceďte do vychladeného pohára.",
+                basePrice = 50.0,
+                category = "alko",
+                descriptionCZ = "Růžový, svěží, sladkokyselý koktejl proslavený novodobou americkou barovou scénou.",
+                descriptionSK = "Svetoznámy ružový, svieži, sladkokyslý kokteil.",
+                glassCZ = "Martini / Coupe sklenice", glassSK = "Martini pohár",
+                difficultyCZ = "Pokročilý", difficultySK = "Pokročilý",
+                alcoholStrengthCZ = "Střední", alcoholStrengthSK = "Stredný",
+                alcoholVol = "16%",
+                alcoholType = "Vodka",
+                drinkCategory = "Moderní koktejly",
+                garnishCZ = "Tenký řez pomerančové kůry", garnishSK = "Pomarančová kôra"
+            ),
+            FeaturedRecipe(
+                czTitle = "Moscow Mule",
+                skTitle = "Moscow Mule",
+                time = "3 min",
+                calories = 130,
+                protein = "0g",
+                carbs = "11g",
+                fat = "0g",
+                ingredientsCZ = listOf("50ml vodky", "120ml štiplavého zázvorového piva", "15ml limetkové šťávy", "drcený led"),
+                ingredientsSK = listOf("50ml vodky", "120ml zázvorového piva (Ginger Beer)", "15ml limetkovej šťavy", "drvený ľad"),
+                isGlutenFree = true, isVegan = true, isVegetarian = true,
+                instructionsCZ = "1. Do měděného hrnku nasypte drcený led.\n2. Přidejte vodku a limetkovou šťávu.\n3. Dolijte štiplavým nealkoholickým zázvorovým pivem a jemně promíchejte.",
+                instructionsSK = "1. Medený hrnček naplňte drveným ľadom.\n2. Pridajte vodku, limetkovú šťavu.\n3. Dolejte zázvorovým pivom a jemne premiešajte.",
+                basePrice = 48.0,
+                category = "alko",
+                descriptionCZ = "Pikantní kořeněný zázvorový nápoj servírovaný v chladivém měděném hrnku.",
+                descriptionSK = "Svieži zázvorový kokteil podávaný v typickom medenom hrnčeku.",
+                glassCZ = "Měděný hrnek", glassSK = "Medený hrnček",
+                difficultyCZ = "Začátečník", difficultySK = "Začiatočník",
+                alcoholStrengthCZ = "Střední", alcoholStrengthSK = "Stredný",
+                alcoholVol = "12%",
+                alcoholType = "Vodka",
+                drinkCategory = "Klasické koktejly, Long drinky, Letní drinky",
+                garnishCZ = "Mátový lístek a plátek limetky", garnishSK = "Lístok mäty, limetka"
+            ),
+            FeaturedRecipe(
+                czTitle = "Classic Bloody Mary",
+                skTitle = "Classic Bloody Mary",
+                time = "4 min",
+                calories = 150,
+                protein = "2g",
+                carbs = "10g",
+                fat = "0g",
+                ingredientsCZ = listOf("50ml vodky", "120ml rajčatového džusu", "15ml čerstvé citronové šťávy", "2-3 kapky worcesteru", "tabasco", "celerová sůl, mletý pepř", "led"),
+                ingredientsSK = listOf("50ml vodky", "120ml paradajkového džúsu", "15ml citrónovej šťavy", "Worcesterová omáčka", "Tabasco", "soľ, korenie", "ľad"),
+                isGlutenFree = true, isVegan = false, isVegetarian = true,
+                instructionsCZ = "1. Všechny suroviny opatrně promíchejte v míchací sklenici se dvěma kostkami ledu metodou throwing (šetrné přelévání z výšky).\n2. Nalijte přes sítko do vysoké sklenice na čerstvý led.\n3. Ozdobte stonkem celeru.",
+                instructionsSK = "1. Všetky suroviny zmiešajte s ľadom (najlepšie pomalým prelievaním medzi dvoma nádobami hodom).\n2. Nalejte do vysokého pohára s ľadom.\n3. Ozdobte stonkou zeleru.",
+                basePrice = 45.0,
+                category = "alko",
+                descriptionCZ = "Peprný, pikantní rajčatový král ranních vyprošťováků.",
+                descriptionSK = "Pikantný paradajkový kokteil s dávkou tajomného korenia.",
+                glassCZ = "Highball sklenice", glassSK = "Highball pohár",
+                difficultyCZ = "Pokročilý", difficultySK = "Pokročilý",
+                alcoholStrengthCZ = "Střední", alcoholStrengthSK = "Stredný",
+                alcoholVol = "11%",
+                alcoholType = "Vodka",
+                drinkCategory = "Klasické koktejly",
+                garnishCZ = "Stonek řapíkatého celeru a plátek citronu", garnishSK = "Stonka zeleru a citrón"
+            ),
+            FeaturedRecipe(
+                czTitle = "White Russian",
+                skTitle = "White Russian",
+                time = "3 min",
+                calories = 250,
+                protein = "1g",
+                carbs = "20g",
+                fat = "10g",
+                ingredientsCZ = listOf("50ml vodky", "25ml kávového likéru Kahlúa", "30ml čerstvé smetany (min. 30%)", "kostky ledu"),
+                ingredientsSK = listOf("50ml vodky", "25ml kávového likéru Kahlúa", "30ml smotany", "ľad"),
+                isGlutenFree = true, isVegan = false, isVegetarian = true,
+                instructionsCZ = "1. Do nízké sklenice dejte kostky ledu, přidejte kávový likér a vodku. Zamíchejte barmanskou lžičkou.\n2. Navrch opatrně po barmanské lžičce nalijte tučnou smetanu tak, aby zůstala líně položená u hladiny v bím kontrastním závoji.",
+                instructionsSK = "1. Do pohára Rocks s kockami ľadu dajte vodku a kávový likér, jemne premiešajte.\n2. Po lyžičke pomaly navrstvite smotanu na zvyšok tekutiny.",
+                basePrice = 48.0,
+                category = "alko",
+                descriptionCZ = "Sametově krémový sladký nápoj s intenzivní chutí čerstvé kávy a smetany.",
+                descriptionSK = "Očarujúci krémový kávovo-smotanový kokteil.",
+                glassCZ = "Rocks Glass", glassSK = "Lowball / Rocks pohár",
+                difficultyCZ = "Začátečník", difficultySK = "Začiatočník",
+                alcoholStrengthCZ = "Střední", alcoholStrengthSK = "Stredný",
+                alcoholVol = "15%",
+                alcoholType = "Vodka",
+                drinkCategory = "Klasické koktejly, Zimní drinky",
+                garnishCZ = "Špetka strouhané čokolády", garnishSK = "Kakaový prach"
+            ),
+            FeaturedRecipe(
+                czTitle = "Espresso Martini",
+                skTitle = "Espresso Martini",
+                time = "4 min",
+                calories = 155,
+                protein = "0g",
+                carbs = "12g",
+                fat = "0g",
+                ingredientsCZ = listOf("50ml vodky", "20ml kávového likéru Kahlúa", "1 šálek čerstvého horkého espressa", "5ml cukrového sirupu", "led"),
+                ingredientsSK = listOf("50ml vodky", "20ml kávového likéru Kahlúa", "1 šálka čerstvého espressa", "ľad"),
+                isGlutenFree = true, isVegan = true, isVegetarian = true,
+                instructionsCZ = "1. Připravte si čerstvé horké espresso. Šlehání horké kávy v ledu vytvoří pevný krém.\n2. Nalijte vodku, likér, sirup a espresso do shakeru se spoustou ledu.\n3. Šejkujte extrémně silně po dobu 15 sekund pro vytvoření husté pěny. Sceďte do vychlazené sklenice.",
+                instructionsSK = "1. Espresso pripravte čerstvé.\n2. Nalejte všetko do šejkra s veľkým množstvom ľadu.\n3. Extrémne rázne šejkujte 15 sekúnd. Sceďte, aby na povrchu vznikla krémová kávová pena.",
+                basePrice = 52.0,
+                category = "alko",
+                descriptionCZ = "Povzbuzující, energická kombinace horkého kofeinu, sladkého kávového likéru a ledové vodky.",
+                descriptionSK = "Povzbudzujúca kombinácia silného kofeínu, kávového likéru a vodky.",
+                glassCZ = "Martini / Coupe", glassSK = "Martini pohár",
+                difficultyCZ = "Pokročilý", difficultySK = "Pokročilý",
+                alcoholStrengthCZ = "Střední", alcoholStrengthSK = "Stredný",
+                alcoholVol = "16%",
+                alcoholType = "Vodka",
+                drinkCategory = "Moderní koktejly, Zimní drinky",
+                garnishCZ = "Tří kávová zrnka položená na hustou pěnu", garnishSK = "3 kávové zrná na pene"
+            ),
+            FeaturedRecipe(
+                czTitle = "Classic Old Fashioned",
+                skTitle = "Classic Old Fashioned",
+                time = "4 min",
+                calories = 140,
+                protein = "0g",
+                carbs = "5g",
+                fat = "0g",
+                ingredientsCZ = listOf("60ml kvalitní whisky", "1 kostka cukru", "3 střiky Angostura Bitters", "pár kapek vody", "led"),
+                ingredientsSK = listOf("60ml whisky", "1 kocka cukru", "3 streky Angostura Bitters", "pár kvapiek vody", "ľad"),
+                isGlutenFree = true, isVegan = true, isVegetarian = true,
+                instructionsCZ = "1. V nízké doporučené sklenici poddrťte cukr s Angosturou a šplíchnutím vody.\n2. Přidejte led a polovinu whisky, promíchejte dlouze.\n3. Přidejte další kousky ledu a zbytek whisky. Pokračuj v míchání cca 20 sekund.",
+                instructionsSK = "1. V pohári rozdrvte kocku cukru pokvapkanú Angosturou a trochou vody.\n2. Pridajte ľad a polovicu whisky, dobre miešajte.\n3. Pridajte opäť trochu ľadu a zvyšok whisky a znova dobre vychlaďte.",
+                basePrice = 65.0,
+                category = "alko",
+                descriptionCZ = "Samotný prapůvod koktejlového umění – oslava plné chuti dubové whisky.",
+                descriptionSK = "Najstarší známy recept, spájajúci dubovú whisky a horké byliny.",
+                glassCZ = "Rocks / Old Fashioned", glassSK = "Pohár Rocks",
+                difficultyCZ = "Pokročilý", difficultySK = "Pokročilý",
+                alcoholStrengthCZ = "Silný", alcoholStrengthSK = "Silný",
+                alcoholVol = "30%",
+                alcoholType = "Whisky",
+                drinkCategory = "Klasické koktejly, Zimní drinky",
+                garnishCZ = "Pomerančová kůra vymáčknutá nad drinkem", garnishSK = "Pomarančová kôra"
+            ),
+            FeaturedRecipe(
+                czTitle = "Whiskey Sour",
+                skTitle = "Whiskey Sour",
+                time = "4 min",
+                calories = 150,
+                protein = "1g",
+                carbs = "9g",
+                fat = "0g",
+                ingredientsCZ = listOf("50ml bourbonu", "25ml čerstvé citronové šťávy", "15ml cukrového sirupu", "15ml čerstvého vaječného bílku pro bohatou pěnu", "led"),
+                ingredientsSK = listOf("50ml bourbonu", "25ml citrónovej šťavy", "15ml sirupu", "15ml vaječného bielka", "ľad"),
+                isGlutenFree = true, isVegan = false, isVegetarian = true,
+                instructionsCZ = "1. Všechny suroviny vložte do shakeru bez ledu a třepejte 10 vteřin (dry shake pro nadýchání vaječného proteinu).\n2. Přidejte spoustu ledu a třepejte silně dalších 15 vteřin.\n3. Přelijte přes barové sítko do sklenice plné ledu.",
+                instructionsSK = "1. Všetky ingrediencie dajte do šejkra bez ľadu a silne traste 10 sekúnd.\n2. Pridajte veľa ľadu a prešejkujte 15 sekúnd znovu.\n3. Preceďte do pohára s ľadom.",
+                basePrice = 58.0,
+                category = "alko",
+                descriptionCZ = "Geniální barové spojení silné whisky, kyselé citrusové šťávy a hedvábné bílkové textury.",
+                descriptionSK = "Tradičné sladkokyslé barové spojenie s úchvatnou textúrou bielej peny.",
+                glassCZ = "Rocks Glass / Sour Coupe", glassSK = "Rocks pohár s ľadom",
+                difficultyCZ = "Masterchef", difficultySK = "Masterchef",
+                alcoholStrengthCZ = "Silný", alcoholStrengthSK = "Silný",
+                alcoholVol = "20%",
+                alcoholType = "Whisky",
+                drinkCategory = "Klasické koktejly",
+                garnishCZ = "Střik Angostura hořkých bylin a koktejlová třešeň", garnishSK = "Čerešnička"
+            ),
+            FeaturedRecipe(
+                czTitle = "Classic Manhattan",
+                skTitle = "Classic Manhattan",
+                time = "3 min",
+                calories = 150,
+                protein = "0g",
+                carbs = "4g",
+                fat = "0g",
+                ingredientsCZ = listOf("50ml žitné whisky", "20ml sladkého červeného vermutu", "2 střiky Angostura Bitters", "led"),
+                ingredientsSK = listOf("50ml ražnej whisky", "20ml červeného vermutu", "2 streky Angostura", "ľad"),
+                isGlutenFree = true, isVegan = true, isVegetarian = true,
+                instructionsCZ = "1. Smíchejte všechny suroviny v míchací sklenici se štědrým množstvím ledu.\n2. Míchejte barmanskou lžící po dobu cca 25 sekund, abyste předešli rychlému tání, které nastává v shakeru.\n3. Sceďte přes sítko do elegantní sklenice.",
+                instructionsSK = "1. Miešajte whisky, vermut a bitters v pohári s ľadom cca 30 sekúnd.\n2. Preceďte do pohára na stopke.",
+                basePrice = 62.0,
+                category = "alko",
+                descriptionCZ = "Kultovní, temný, plný a hloubavý drink z barmanského srdce New Yorku.",
+                descriptionSK = "Kultový, bylinno-obilný nápoj barovej elity.",
+                glassCZ = "Coupette / Cocktail Glass", glassSK = "Pohár na stopke",
+                difficultyCZ = "Pokročilý", difficultySK = "Pokročilý",
+                alcoholStrengthCZ = "Silný", alcoholStrengthSK = "Silný",
+                alcoholVol = "25%",
+                alcoholType = "Whisky",
+                drinkCategory = "Klasické koktejly, Zimní drinky",
+                garnishCZ = "Barmanská třešeň Maraschino na špejli", garnishSK = "Maraschino čerešnička"
+            ),
+            FeaturedRecipe(
+                czTitle = "Dublin Irish Coffee",
+                skTitle = "Dublin Irish Coffee",
+                time = "5 min",
+                calories = 195,
+                protein = "1g",
+                carbs = "10g",
+                fat = "8g",
+                ingredientsCZ = listOf("40ml irské whisky", "120ml čerstvé silné filtrované kávy", "2 lžičky třtinového cukru", "30ml jemně vyšlehané polotekuté smetany"),
+                ingredientsSK = listOf("40ml írskej whisky", "120ml horúcej filtrovanej kávy", "2 lyžičky cukru", "30ml smotany"),
+                isGlutenFree = true, isVegan = false, isVegetarian = true,
+                instructionsCZ = "1. Ve vyhřáté sklenici rozpusťte cukr v čerstvé horké kávě, vlijte irskou whisky.\n2. Po zadní vypouklé straně lžíce pomalu nalijte vychlazenou polotekutou smetanu.\n3. Nápoj nepromíchávejte – horká káva s whisky se pije přes studenou smetanovou clonu.",
+                instructionsSK = "1. Do vyhriateho skla dajte cukor a horúcu kávu, rozmiešajte a nalejte whisky.\n2. Opatrne cez chrbát lyžičky navrstvite polotekutú studenú smotanu na povrch.\n3. Nepremiešavajte!",
+                basePrice = 50.0,
+                category = "alko",
+                descriptionCZ = "Perfektní spojení hřejivé obilné whisky, silné černé kávy a chladivé nadýchané smetany.",
+                descriptionSK = "Spojenie horúcej kávy so sladom írskej whisky, zakryté studenou smotanovou dekou.",
+                glassCZ = "Varné barové sklo s uchem", glassSK = "Hrniec z varného skla",
+                difficultyCZ = "Pokročilý", difficultySK = "Pokročilý",
+                alcoholStrengthCZ = "Střední", alcoholStrengthSK = "Stredný",
+                alcoholVol = "10%",
+                alcoholType = "Whisky",
+                drinkCategory = "Klasické koktejly, Zimní drinky",
+                garnishCZ = "Popraš ze strouhaného muškátového oříšku", garnishSK = "Štipka kakaa"
+            ),
+            FeaturedRecipe(
+                czTitle = "Tradiční Aperol Spritz",
+                skTitle = "Tradičný Aperol Spritz",
+                time = "3 min",
+                calories = 150,
+                protein = "0g",
+                carbs = "15g",
+                fat = "0g",
+                ingredientsCZ = listOf("60ml šumivého Prosecca", "40ml Aperolu", "sodovka k dolití", "plátek pomeranče", "led"),
+                ingredientsSK = listOf("60ml šumivého Prosecca", "40ml Aperolu", "sóda na doliatie", "pomaranč", "ľad"),
+                isGlutenFree = true, isVegan = true, isVegetarian = true,
+                instructionsCZ = "1. Velkou vinnou sklenici naplňte ledem.\n2. Nalijte 3 díly Prosecca, 2 díly Aperolu a nakonec zakápněte 1 dílem sodovky.\n3. Zlehka odspodu promíchejte a vložte plátek pomeranče.",
+                instructionsSK = "1. Veľký pohár na víno osypte ľadom.\n2. Nalejte 3 diely Prosecca, potom 2 diely Aperolu a len jemne zakápnite sódou pro chuť.",
+                basePrice = 42.0,
+                category = "alko",
+                descriptionCZ = "Nejpopulárnější letní oranžové osvěžení s bylinně-pomerančovým nádechem.",
+                descriptionSK = "Najznámejší letný oranžový nápoj plný šumivého vína.",
+                glassCZ = "Velká sklenice na víno", glassSK = "Pohár na víno",
+                difficultyCZ = "Začátečník", difficultySK = "Začiatočník",
+                alcoholStrengthCZ = "Slabý", alcoholStrengthSK = "Slabý",
+                alcoholVol = "8%",
+                alcoholType = "Prosecco",
+                drinkCategory = "Moderní koktejly, Letní drinky, Long drinky",
+                garnishCZ = "Zavalitý plátek čerstvého pomeranče", garnishSK = "Plátok pomaranča"
+            ),
+            FeaturedRecipe(
+                czTitle = "Hugo Spritz",
+                skTitle = "Hugo Spritz",
+                time = "3 min",
+                calories = 140,
+                protein = "0g",
+                carbs = "14g",
+                fat = "0g",
+                ingredientsCZ = listOf("60ml italského Prosecca", "20ml bezinkového sirupu", "sodovka k dolití", "lístky máty", "měsíček limetky", "led"),
+                ingredientsSK = listOf("60ml Prosecca", "20ml bazového sirupu", "sóda k doliatie", "lístky mäty", "limetka", "ľad"),
+                isGlutenFree = true, isVegan = true, isVegetarian = true,
+                instructionsCZ = "1. Do vinné sklenice s ledem přidejte bezinkový sirup.\n2. Přilijte Prosecco a sodovku.\n3. Přidejte podrcené mátové lístky pro uvolnění éterických olejů a limetkový měsíček.",
+                instructionsSK = "1. Do vínového pohára s ľadom dajte bazový sirup.\n2. Prilejte Prosecco, sódu, pridajte mätu a limetku a zľahka premiešajte.",
+                basePrice = 42.0,
+                category = "alko",
+                descriptionCZ = "Jemná, svěží, sladká květinová alternativa se skvělou vůní bezového květu.",
+                descriptionSK = "Uhrančivo svieža, sladká kvetinová verzia spritzu.",
+                glassCZ = "Velká sklenice na víno", glassSK = "Vínový pohár",
+                difficultyCZ = "Začátečník", difficultySK = "Začiatočník",
+                alcoholStrengthCZ = "Slabý", alcoholStrengthSK = "Slabý",
+                alcoholVol = "8%",
+                alcoholType = "Prosecco",
+                drinkCategory = "Moderní koktejly, Letní drinky",
+                garnishCZ = "Natrhaná čerstvá máta a limetka", garnishSK = "Mäta a limetka"
+            ),
+            FeaturedRecipe(
+                czTitle = "Mimosa",
+                skTitle = "Mimosa",
+                time = "2 min",
+                calories = 110,
+                protein = "0.5g",
+                carbs = "11g",
+                fat = "0g",
+                ingredientsCZ = listOf("75ml šumivého Prosecca nebo Champagne", "75ml čerstvé pomerančové šťávy"),
+                ingredientsSK = listOf("75ml suchého sektu / Prosecca", "75ml čerstvej pomarančovej šťavy"),
+                isGlutenFree = true, isVegan = true, isVegetarian = true,
+                instructionsCZ = "1. Into štíhlé sklenice na sekt nalijte dobře vychlazený pomerančový džus.\n2. Pomalu doplňte sektem, aby jemný plyn nevyprchal.\n3. Zlehka promíchejte.",
+                instructionsSK = "1. Do pohára na šampanské (Flauta) nalejte studený džús.\n2. Pomaly dolejte Proseccom alebo šampanským po stene a jemne premiešajte.",
+                basePrice = 40.0,
+                category = "alko",
+                descriptionCZ = "Klasický barový standard, oblíbená snídaňová a dopolední Mimosa.",
+                descriptionSK = "Elegantný spoločník pre sviatočné raňajky a nedeľný brunch.",
+                glassCZ = "Flétna sklenice", glassSK = "Pohár na šampanské Flauta",
+                difficultyCZ = "Začátečník", difficultySK = "Začiatočník",
+                alcoholStrengthCZ = "Slabý", alcoholStrengthSK = "Slabý",
+                alcoholVol = "7%",
+                alcoholType = "Prosecco",
+                drinkCategory = "Klasické koktejly, Letní drinky",
+                garnishCZ = "Jahoda na okraji sklenice", garnishSK = "Jahoda"
+            ),
+            FeaturedRecipe(
+                czTitle = "French 75",
+                skTitle = "French 75",
+                time = "4 min",
+                calories = 135,
+                protein = "0g",
+                carbs = "6g",
+                fat = "0g",
+                ingredientsCZ = listOf("30ml suchého ginu", "15ml čerstvé citronové šťávy", "10ml cukrového sirupu", "60ml Prosecca nebo Champagne k dolití", "led"),
+                ingredientsSK = listOf("30ml suchého ginu", "15ml citrónovej šťavy", "10ml sirupu", "60ml šampanského alebo Prosecca", "ľad"),
+                isGlutenFree = true, isVegan = true, isVegetarian = true,
+                instructionsCZ = "1. V shakeru s ledem do ledova promíchejte gin, citronovou šťávu a sirup.\n2. Přes barové sítko nalijte do vychlazené flétny.\n3. Dolijte šumivým vínem a dozdobte.",
+                instructionsSK = "1. V šejkri vyšejkujte gin, citrónovú šťavu a sirup s ľadom.\n2. Preceďte do vysokého pohára Flauta a dolejte šampanským.",
+                basePrice = 58.0,
+                category = "alko",
+                descriptionCZ = "Silný, sektový a aristokratický nápoj pojmenovaný po vojenském dělu.",
+                descriptionSK = "Sofistikovaný a silný kráľovský kokteil.",
+                glassCZ = "Flétna sklenice", glassSK = "Flauta pohár",
+                difficultyCZ = "Pokročilý", difficultySK = "Pokročilý",
+                alcoholStrengthCZ = "Silný", alcoholStrengthSK = "Silný",
+                alcoholVol = "16%",
+                alcoholType = "Prosecco",
+                drinkCategory = "Klasické koktejly",
+                garnishCZ = "Spirála z citronové kůry", garnishSK = "Citrónová špirála"
+            ),
+            FeaturedRecipe(
+                czTitle = "Long Island Iced Tea",
+                skTitle = "Long Island Iced Tea",
+                time = "5 min",
+                calories = 290,
+                protein = "0g",
+                carbs = "25g",
+                fat = "0g",
+                ingredientsCZ = listOf("15ml ginu", "15ml vodky", "15ml bílého rumu", "15ml tequily", "15ml pomerančového likéru", "20ml citronové šťávy", "15ml cukrového sirupu", "Coca-Cola k dolití", "led"),
+                ingredientsSK = listOf("15ml ginu", "15ml vodky", "15ml rumu", "15ml tequily", "15ml Triple Sec", "20ml citrónovej šťavy", "15ml sirupu", "Coca-Cola", "ľad"),
+                isGlutenFree = true, isVegan = true, isVegetarian = true,
+                instructionsCZ = "1. Vysokou sklenici naplňte ledovými kostkami.\n2. Nalijte postupně všech pět destilátů, citronovou šťávu a cukrový sirup.\n3. Dolijte colou do tmavě hnědého odstínu ledového čaje a zlehka promíchejte.",
+                instructionsSK = "1. Vysoký pohár naplňte ľadom.\n2. Nalejte všetkých 5 destilátov a citrónovú šťavu so sirupom.\n3. Dolejte Coca-Colou na stmavenie a zľahka premiešajte.",
+                basePrice = 65.0,
+                category = "alko",
+                descriptionCZ = "Extrémně silný drink z pěti různých destilátů imitující barvu čaje.",
+                descriptionSK = "Jeden z najsilnejších moderných barových drinkov s maskou nevinného ľadového čaju.",
+                glassCZ = "Collins sklenice", glassSK = "Vysoký pohár Collins",
+                difficultyCZ = "Masterchef", difficultySK = "Masterchef",
+                alcoholStrengthCZ = "Silný", alcoholStrengthSK = "Silný",
+                alcoholVol = "28%",
+                alcoholType = "Vodka",
+                drinkCategory = "Klasické koktejly, Long drinky, Letní drinky",
+                garnishCZ = "Citronový řez na okraji sklenice", garnishSK = "Citrón"
+            ),
+            FeaturedRecipe(
+                czTitle = "Sex on the Beach",
+                skTitle = "Sex on the Beach",
+                time = "4 min",
+                calories = 185,
+                protein = "0.5g",
+                carbs = "22g",
+                fat = "0g",
+                ingredientsCZ = listOf("40ml vodky", "20ml broskvového likéru", "40ml pomerančového džusu", "40ml brusinkového džusu", "led"),
+                ingredientsSK = listOf("40ml vodky", "20ml broskyňového likéru", "40ml pomarančového džúsu", "40ml brusnicového džúsu", "ľad"),
+                isGlutenFree = true, isVegan = true, isVegetarian = true,
+                instructionsCZ = "1. Vysokou sklenici osypte ledem.\n2. Nalijte vodku, broskvový likér a pomerančový džus a promíchejte.\n3. Opatrně navrch přilijte brusinkový džus tak, aby klesl a vytvořil hezké vrstvení barev.",
+                instructionsSK = "1. Pohár naplňte ľadom, nalejte vodku, broskyňový likér a pomarančový džús.\n2. Navrch opatrne prilejte brusnicový džús pre vrstvený efekt.",
+                basePrice = 48.0,
+                category = "alko",
+                descriptionCZ = "Exotický, sladký letní koktejl s broskvovým nádechem.",
+                descriptionSK = "Tropický, sladký letný ovocný kokteil s broskyňovým nádychom.",
+                glassCZ = "Hurricane sklenice", glassSK = "Vysoký pohár Hurricane",
+                difficultyCZ = "Začátečník", difficultySK = "Začiatočník",
+                alcoholStrengthCZ = "Střední", alcoholStrengthSK = "Stredný",
+                alcoholVol = "10%",
+                alcoholType = "Vodka",
+                drinkCategory = "Moderní koktejly, Letní drinky, Long drinky",
+                garnishCZ = "Pomeranč a šťavnatá marasca třešeň", garnishSK = "Maraschino čerešnička"
+            ),
+            FeaturedRecipe(
+                czTitle = "Blue Lagoon",
+                skTitle = "Modrá lagúna",
+                time = "3 min",
+                calories = 150,
+                protein = "0g",
+                carbs = "14g",
+                fat = "0g",
+                ingredientsCZ = listOf("40ml vodky", "20ml likéru Blue Curaçao", "120ml citronové limonády", "10ml citronové šťávy", "led"),
+                ingredientsSK = listOf("40ml vodky", "20ml likéru Blue Curaçao", "120ml citrónovej limonády", "10ml citrónovej šťavy", "ľad"),
+                isGlutenFree = true, isVegan = true, isVegetarian = true,
+                instructionsCZ = "1. Sklenici naplňte kostkami ledu.\n2. Nalijte vodku a zářivě modré Curaçao.\n3. Dolijte citronovou limonádou (Sprite nebo 7Up) a citrónovou šťávou.",
+                instructionsSK = "1. Pohár naplňte ľadom.\n2. Nalejte vodku a modrý likér Curaçao.\n3. Dolejte citrónovou limonádou a zľahka premiešajte.",
+                basePrice = 45.0,
+                category = "alko",
+                descriptionCZ = "Tyrkysově modrý citrusový drink evokující barvy průzračného moře.",
+                descriptionSK = "Neuveriteľne jasný modrý citrusový nápoj s príchuťou pomarančov.",
+                glassCZ = "Highball sklenice", glassSK = "Highball pohár",
+                difficultyCZ = "Začátečník", difficultySK = "Začiatočník",
+                alcoholStrengthCZ = "Střední", alcoholStrengthSK = "Stredný",
+                alcoholVol = "11%",
+                alcoholType = "Vodka",
+                drinkCategory = "Moderní koktejly, Letní drinky, Long drinky",
+                garnishCZ = "Plátek citronu", garnishSK = "Plátok citróna"
+            ),
+            FeaturedRecipe(
+                czTitle = "Kamikaze Shot",
+                skTitle = "Kamikaze Shot",
+                time = "2 min",
+                calories = 110,
+                protein = "0g",
+                carbs = "6g",
+                fat = "0g",
+                ingredientsCZ = listOf("30ml vodky", "30ml likéru Triple Sec", "30ml čerstvé limetkové šťávy", "led"),
+                ingredientsSK = listOf("30ml vodky", "30ml Triple Sec likéru", "30ml limetkovej šťavy", "ľad"),
+                isGlutenFree = true, isVegan = true, isVegetarian = true,
+                instructionsCZ = "1. Všechny suroviny přidejte do shakeru s ledem.\n2. Velmi intenzivně šejkujte 10 sekund k dosažení naprostého chladu.\n3. Rozlijte přes barové sítko do dvou sklenic typu panák.",
+                instructionsSK = "1. Všetko dajte do šejkra s veľkým množstvom ľadu.\n2. Veľmi chladne pretrepte.\n3. Rozlejte do pripravených panákov.",
+                basePrice = 40.0,
+                category = "alko",
+                descriptionCZ = "Klasický party shot založený na poměru 1:1:1 s ledovou kyselou strukturou.",
+                descriptionSK = "Známy intenzívny citrusový party shot u barového pultu.",
+                glassCZ = "Panáková sklenička", glassSK = "Panáky (Shots)",
+                difficultyCZ = "Začátečník", difficultySK = "Začiatočník",
+                alcoholStrengthCZ = "Silný", alcoholStrengthSK = "Silný",
+                alcoholVol = "22%",
+                alcoholType = "Vodka",
+                drinkCategory = "Shoty",
+                garnishCZ = "Strouhaná limetková kůra", garnishSK = "Limetka"
+            ),
+            FeaturedRecipe(
+                czTitle = "B-52 Shot",
+                skTitle = "B-52 Shot",
+                time = "3 min",
+                calories = 140,
+                protein = "0.5g",
+                carbs = "12g",
+                fat = "5g",
+                ingredientsCZ = listOf("20ml kávového likéru Kahlúa", "20ml krémového likéru Baileys", "20ml pomerančového Grand Marnier"),
+                ingredientsSK = listOf("20ml kávového likéru", "20ml Baileys krému", "20ml likéru Grand Marnier"),
+                isGlutenFree = true, isVegan = false, isVegetarian = true,
+                instructionsCZ = "1. Použijte techniku layering (vrstvení): nejprve do panáku nalijte kávový likér.\n2. Přes zadní stranu lžíce opatrně vlijte vrstvu Baileys.\n3. Stejným způsobem opatrně navrstvěte Grand Marnier. Vzniknou tři perfektně oddělené vrstvy.",
+                instructionsSK = "1. Do panáka nalejte najskôr kávový likér.\n2. Cez chrbát lyžičky veľmi pomaly prichytenej k stene nalejte Baileys.\n3. Rovnakým spôsobom navrstvite Grand Marnier.",
+                basePrice = 50.0,
+                category = "alko",
+                descriptionCZ = "Slavný vrstvený koktejlový shot, který se před vypitím často zapaluje.",
+                descriptionSK = "Trojvrstvový, vizuálne perfektný barový shot.",
+                glassCZ = "Vysoký panák", glassSK = "Panák (Shot)",
+                difficultyCZ = "Masterchef", difficultySK = "Masterchef",
+                alcoholStrengthCZ = "Silný", alcoholStrengthSK = "Silný",
+                alcoholVol = "26%",
+                alcoholType = "Likér",
+                drinkCategory = "Shoty",
+                garnishCZ = "Tříbarevný vrstvený efekt", garnishSK = "Tri kontrastné vrstvy"
+            ),
+            FeaturedRecipe(
+                czTitle = "Jägerbomb",
+                skTitle = "Jägerbomb",
+                time = "2 min",
+                calories = 155,
+                protein = "0g",
+                carbs = "18g",
+                fat = "0g",
+                ingredientsCZ = listOf("40ml bylinného likéru Jägermeister", "100ml energetického nápoje Red Bull"),
+                ingredientsSK = listOf("40ml likéru Jägermeister", "100ml energetického nápoja Red Bull"),
+                isGlutenFree = true, isVegan = true, isVegetarian = true,
+                instructionsCZ = "1. Sklenici Collins nebo Rocks naplňte energetickým nápojem Red Bull.\n2. Jägermeister vlejte do barového celoskleněného panáku.\n3. Celého panáka nechte dramaticky vhodit napřímo do velké sklenice a ihned vypijte.",
+                instructionsSK = "1. Vysoký pohár naplňte chladeným Red Bullom.\n2. Do klasického panáka nalejte Jägermeister.\n3. Pusťte celý pohárik s Jägermeistrom do Red Bullu a ihneď vypite na ex!",
+                basePrice = 48.0,
+                category = "alko",
+                descriptionCZ = "Populární divácká party bomba.",
+                descriptionSK = "Populárna divácka párty bomba so silným kofeínovým telom.",
+                glassCZ = "Široká sklenice a panák", glassSK = "Široký pohár & panák",
+                difficultyCZ = "Začátečník", difficultySK = "Začiatočník",
+                alcoholStrengthCZ = "Střední", alcoholStrengthSK = "Stredný",
+                alcoholVol = "15%",
+                alcoholType = "Likér",
+                drinkCategory = "Shoty",
+                garnishCZ = "Efekt vhození panáka před hosty", garnishSK = "Efekt vhodenia"
+            )
+        )
     }
 }

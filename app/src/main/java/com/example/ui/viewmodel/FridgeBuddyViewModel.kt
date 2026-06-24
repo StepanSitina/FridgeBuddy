@@ -26,6 +26,14 @@ class FridgeBuddyViewModel(application: Application) : AndroidViewModel(applicat
     private val _isOnboardingCompleted = MutableStateFlow(prefs.getBoolean("onboarding_completed", false))
     val isOnboardingCompleted: StateFlow<Boolean> = _isOnboardingCompleted.asStateFlow()
 
+    private val _isTutorialCompleted = MutableStateFlow(prefs.getBoolean("tutorial_completed", false))
+    val isTutorialCompleted: StateFlow<Boolean> = _isTutorialCompleted.asStateFlow()
+
+    fun completeTutorial() {
+        prefs.edit().putBoolean("tutorial_completed", true).apply()
+        _isTutorialCompleted.value = true
+    }
+
     // Email for synchronization
     private val _userEmail = MutableStateFlow(prefs.getString("user_email", null))
     val userEmail: StateFlow<String?> = _userEmail.asStateFlow()
@@ -34,6 +42,10 @@ class FridgeBuddyViewModel(application: Application) : AndroidViewModel(applicat
     private val _userNickname = MutableStateFlow(prefs.getString("user_nickname", "") ?: "")
     val userNickname: StateFlow<String> = _userNickname.asStateFlow()
 
+    // User unique 6-character/digit invitation/pairing code
+    private val _userPairingCode = MutableStateFlow(prefs.getString("user_pairing_code", null))
+    val userPairingCode: StateFlow<String?> = _userPairingCode.asStateFlow()
+
     // Password for secure login
     private val _userPassword = MutableStateFlow(prefs.getString("user_password", null))
     val userPassword: StateFlow<String?> = _userPassword.asStateFlow()
@@ -41,6 +53,15 @@ class FridgeBuddyViewModel(application: Application) : AndroidViewModel(applicat
     // Language setting (false = Czech/CZK, true = Slovak/EUR)
     private val _isSlovak = MutableStateFlow(prefs.getString("language_code", "CZ") == "SK")
     val isSlovak: StateFlow<Boolean> = _isSlovak.asStateFlow()
+
+    // Household / Family group ID (persistent in SharedPreferences)
+    private val _householdId = MutableStateFlow(prefs.getString("household_id", "NK-FAMILY-DEMO123") ?: "NK-FAMILY-DEMO123")
+    val householdId: StateFlow<String> = _householdId.asStateFlow()
+
+    fun updateHouseholdId(newId: String) {
+        prefs.edit().putString("household_id", newId).apply()
+        _householdId.value = newId
+    }
 
     // Daily Caloric Goal limit (customizable)
     private val _calorieGoal = MutableStateFlow(2100)
@@ -69,6 +90,9 @@ class FridgeBuddyViewModel(application: Application) : AndroidViewModel(applicat
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val shoppingItems: StateFlow<List<ShoppingItem>> = repository.allShoppingItems
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val scanHistory: StateFlow<List<ScanHistoryItem>> = repository.allScanHistory
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Caloric Progress Stats (derived state of today's logs)
@@ -147,11 +171,14 @@ class FridgeBuddyViewModel(application: Application) : AndroidViewModel(applicat
         }
         val salt = HashUtils.generateSalt()
         val hash = HashUtils.sha256(pword, salt)
+        val generatedDigits = (100000..999999).random().toString()
+        val generatedCode = "NK-$generatedDigits"
         val user = UserEntity(
             email = trimmedEmail,
             nickname = nickname.trim(),
             passwordHash = hash,
-            salt = salt
+            salt = salt,
+            pairingCode = generatedCode
         )
         return try {
             repository.registerUser(user)
@@ -160,11 +187,13 @@ class FridgeBuddyViewModel(application: Application) : AndroidViewModel(applicat
             _isSlovak.value = (lang == "SK")
             _userEmail.value = user.email
             _userNickname.value = user.nickname
+            _userPairingCode.value = user.pairingCode
             _isOnboardingCompleted.value = true
             prefs.edit()
                 .putString("language_code", lang)
                 .putString("user_email", user.email)
                 .putString("user_nickname", user.nickname)
+                .putString("user_pairing_code", user.pairingCode)
                 .putBoolean("onboarding_completed", true)
                 .apply()
             null
@@ -182,15 +211,25 @@ class FridgeBuddyViewModel(application: Application) : AndroidViewModel(applicat
         val hash = HashUtils.sha256(pword, user.salt)
         if (hash == user.passwordHash) {
             // Success! Save session state
+            var finalPairingCode = user.pairingCode
+            if (finalPairingCode.isNullOrBlank()) {
+                val generatedDigits = (100000..999999).random().toString()
+                finalPairingCode = "NK-$generatedDigits"
+                val updatedUser = user.copy(pairingCode = finalPairingCode)
+                repository.registerUser(updatedUser)
+            }
+
             _languageCode.value = lang
             _isSlovak.value = (lang == "SK")
             _userEmail.value = user.email
             _userNickname.value = user.nickname
+            _userPairingCode.value = finalPairingCode
             _isOnboardingCompleted.value = true
             prefs.edit()
                 .putString("language_code", lang)
                 .putString("user_email", user.email)
                 .putString("user_nickname", user.nickname)
+                .putString("user_pairing_code", finalPairingCode)
                 .putBoolean("onboarding_completed", true)
                 .apply()
             return null
@@ -220,6 +259,7 @@ class FridgeBuddyViewModel(application: Application) : AndroidViewModel(applicat
             _userEmail.value = null
             _userPassword.value = null
             _userNickname.value = ""
+            _userPairingCode.value = null
             _isOnboardingCompleted.value = false
             try {
                 repository.clearAllData()
@@ -230,6 +270,7 @@ class FridgeBuddyViewModel(application: Application) : AndroidViewModel(applicat
                 .remove("user_email")
                 .remove("user_password")
                 .remove("user_nickname")
+                .remove("user_pairing_code")
                 .putBoolean("onboarding_completed", false)
                 .apply()
         }
@@ -277,7 +318,49 @@ class FridgeBuddyViewModel(application: Application) : AndroidViewModel(applicat
     }
 
     suspend fun fetchBarcodeProduct(barcode: String): OpenFoodFactsProduct? {
-        return GeminiService.fetchOpenFoodFactsProduct(barcode, _isSlovak.value)
+            return StepInTechAiService.fetchOpenFoodFactsProduct(barcode, _isSlovak.value)
+    }
+
+    fun addScanHistoryItem(name: String, barcode: String, category: String, price: Double) {
+        viewModelScope.launch {
+            val currency = if (_isSlovak.value) "EUR" else "CZK"
+            repository.addScanHistoryItem(
+                ScanHistoryItem(
+                    name = name,
+                    barcode = barcode,
+                    category = category,
+                    approxPrice = price,
+                    currency = currency,
+                    timestamp = System.currentTimeMillis()
+                )
+            )
+        }
+    }
+
+    fun removeScanHistoryItem(id: Int) {
+        viewModelScope.launch {
+            repository.removeScanHistoryItemById(id)
+        }
+    }
+
+    fun addPantryItemTwice(name: String, category: String, approxPrice: Double) {
+        viewModelScope.launch {
+            val currency = if (_isSlovak.value) "EUR" else "CZK"
+            // expirace 7 dnu standardně
+            val expirationTimestamp = System.currentTimeMillis() + (7 * 24 * 60 * 60 * 1000L)
+            repeat(2) {
+                repository.addPantryItem(
+                    PantryItem(
+                        name = name,
+                        quantityHint = "1 ks",
+                        category = category,
+                        expirationTimestamp = expirationTimestamp,
+                        approxPrice = approxPrice,
+                        currency = currency
+                    )
+                )
+            }
+        }
     }
 
     // Pantry Management
@@ -463,12 +546,12 @@ class FridgeBuddyViewModel(application: Application) : AndroidViewModel(applicat
         }
     }
 
-    // Receipt OCR Parsing through GeminiService or Fallback local
+    // Receipt OCR Parsing through StepInTechAiService or Fallback local
     fun processReceiptOcr(text: String) {
         _isAiLoading.value = true
         viewModelScope.launch {
             try {
-                val parsedList = GeminiService.parseReceipt(text, _isSlovak.value)
+                val parsedList = StepInTechAiService.parseReceipt(text, _isSlovak.value)
                 val now = System.currentTimeMillis()
                 val oneDay = 24 * 60 * 60 * 1000L
                 parsedList.forEach { i ->
@@ -496,7 +579,7 @@ class FridgeBuddyViewModel(application: Application) : AndroidViewModel(applicat
         _isAiLoading.value = true
         viewModelScope.launch {
             try {
-                val parsedList = GeminiService.parseVoiceInput(spokenText, _isSlovak.value)
+                val parsedList = StepInTechAiService.parseVoiceInput(spokenText, _isSlovak.value)
                 val now = System.currentTimeMillis()
                 val oneDay = 24 * 60 * 60 * 1000L
                 parsedList.forEach { i ->
@@ -548,9 +631,19 @@ class FridgeBuddyViewModel(application: Application) : AndroidViewModel(applicat
         viewModelScope.launch {
             try {
                 val names = pantryItems.value.map { "${it.name} (${it.quantityHint})" }
-                val diets = mutableListOf<String>()
-                // standard allergens could be filtered
-                val rec = GeminiService.generateAiRecipes(names, diets, customQuery, _isSlovak.value)
+                // TODO: Přidat skutečné alergeny profilu a ID domácnosti (zde zatím mock)
+                val userAllergies = listOf("lepek", "laktóza") 
+                val householdId = _householdId.value
+                val userId = "user123"
+
+                val rec = StepInTechAiService.generateAiRecipes(
+                    householdId = householdId,
+                    userId = userId,
+                    availableItems = names,
+                    userAllergies = userAllergies,
+                    customRequest = customQuery,
+                    isSlovak = _isSlovak.value
+                )
                 _aiRecipeMarkdown.value = rec
             } catch (e: Exception) {
                 _aiRecipeMarkdown.value = "Chyba při komunikaci s kuchařem / Chyba kulinárskeho serveru."
@@ -576,7 +669,7 @@ class FridgeBuddyViewModel(application: Application) : AndroidViewModel(applicat
         }
     }
 
-    // Locally mapped standard localized recipe database computed on demand if Gemini offline logic triggers
+    // Locally mapped standard localized recipe database computed on demand if StepInTech AI offline logic triggers
     private fun computeRecipeList(itemNames: List<String>, isSlovak: Boolean): List<LocalRecipe> {
         val list = mutableListOf<LocalRecipe>()
         val lang = _languageCode.value

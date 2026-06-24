@@ -63,12 +63,18 @@ fun RecipeScreen(
     var selectedPrepMethod by remember { mutableStateOf("vse") } // "vse", "vareni", "peceni", "smazeni", "duseni", "grilovani", "studena"
     var selectedCuisine by remember { mutableStateOf("vse") } // "vse", "ceska", "regionalni", "asijska", "italska", "retro"
 
+    // Drink-specific filter states
+    var selectedAlcoholType by remember { mutableStateOf("vse") } // "vse", "Rum", "Tequila", "Gin", "Vodka", "Whisky", "Prosecco", "Likér"
+    var selectedAlcoholStrength by remember { mutableStateOf("vse") } // "vse", "slaby", "stredni", "silny"
+    var selectedDrinkCategory by remember { mutableStateOf("vse") } // "vse", "Klasické koktejly", "Letní drinky", "Long drinky", "Shoty", "Zimní drinky"
+
     val hasActiveFilters = includeIngredients.isNotBlank() || excludeIngredients.isNotBlank() ||
-        selectedMealCategory != "vse" || selectedOccasion != "vse" ||
+        (activeScreenTab != "alko" && (selectedMealCategory != "vse" || selectedOccasion != "vse" ||
         filterGlutenFree || filterVegetarian || filterVegan || filterLactoseFree || filterLowCarb ||
         maxCaloriesLimit != null || filterHighProtein ||
-        maxPrepTimeCategory != "vse" || selectedDifficulty != "vse" ||
-        selectedPrepMethod != "vse" || selectedCuisine != "vse"
+        selectedPrepMethod != "vse" || selectedCuisine != "vse")) ||
+        (activeScreenTab == "alko" && (selectedAlcoholType != "vse" || selectedAlcoholStrength != "vse" || selectedDrinkCategory != "vse")) ||
+        maxPrepTimeCategory != "vse" || selectedDifficulty != "vse"
 
     // Multi-Language Strings
     val screenTitleObj = if (isSlovak) "Inteligentný Kulinársky Generátor" else "Inteligentní Kulinářský Generátor"
@@ -211,23 +217,33 @@ fun RecipeScreen(
         }
 
         if (selectedDifficulty != "vse") {
-            val matchesDiff = when (selectedDifficulty) {
-                "zacatecnik" -> {
-                    r.instructionsCZ.length < 320 || titleCZ.contains("toust") || titleCZ.contains("toast") || titleCZ.contains("pomazánka") || titleCZ.contains("čaj") || titleCZ.contains("salát")
+            if (r.category == "alko") {
+                val matchesDiff = when (selectedDifficulty) {
+                    "zacatecnik" -> r.difficultyCZ.lowercase() == "začátečník" || r.difficultySK.lowercase() == "začiatočník"
+                    "pokrocily" -> r.difficultyCZ.lowercase() == "pokročilý" || r.difficultySK.lowercase() == "pokročilý"
+                    "masterchef" -> r.difficultyCZ.lowercase().contains("master") || r.difficultySK.lowercase().contains("master")
+                    else -> true
                 }
-                "pokrocily" -> {
-                    (r.instructionsCZ.length in 320..600) || titleCZ.contains("polévka") || titleCZ.contains("koláč") || titleCZ.contains("guláš")
+                if (!matchesDiff) return@filter false
+            } else {
+                val matchesDiff = when (selectedDifficulty) {
+                    "zacatecnik" -> {
+                        r.instructionsCZ.length < 320 || titleCZ.contains("toust") || titleCZ.contains("toast") || titleCZ.contains("pomazánka") || titleCZ.contains("čaj") || titleCZ.contains("salát")
+                    }
+                    "pokrocily" -> {
+                        (r.instructionsCZ.length in 320..600) || titleCZ.contains("polévka") || titleCZ.contains("koláč") || titleCZ.contains("guláš")
+                    }
+                    "masterchef" -> {
+                        r.instructionsCZ.length > 600 || titleCZ.contains("svíčkov") || titleCZ.contains("kachna") || titleCZ.contains("steak") || titleCZ.contains("tatar") || titleCZ.contains("husa")
+                    }
+                    else -> true
                 }
-                "masterchef" -> {
-                    r.instructionsCZ.length > 600 || titleCZ.contains("svíčkov") || titleCZ.contains("kachna") || titleCZ.contains("steak") || titleCZ.contains("tatar") || titleCZ.contains("husa")
-                }
-                else -> true
+                if (!matchesDiff) return@filter false
             }
-            if (!matchesDiff) return@filter false
         }
 
-        // Prep Technology
-        if (selectedPrepMethod != "vse") {
+        // Prep Technology (non-alko drinks/foods)
+        if (activeScreenTab != "alko" && selectedPrepMethod != "vse") {
             val matchesTech = when (selectedPrepMethod) {
                 "vareni" -> {
                     descCZ.contains("vař") || descCZ.contains("uvar") || descCZ.contains("vývar") || titleCZ.contains("polévka") || titleCZ.contains("krém") || descSK.contains("var")
@@ -252,8 +268,8 @@ fun RecipeScreen(
             if (!matchesTech) return@filter false
         }
 
-        // Cuisine style
-        if (selectedCuisine != "vse") {
+        // Cuisine style (non-alko drinks/foods)
+        if (activeScreenTab != "alko" && selectedCuisine != "vse") {
             val matchesCuisine = when (selectedCuisine) {
                 "ceska" -> {
                     titleCZ.contains("svíčkov") || titleCZ.contains("guláš") || titleCZ.contains("knedlí") || titleCZ.contains("řízek") || titleCZ.contains("kapr") || titleCZ.contains("bramborák") || titleCZ.contains("koláč") || titleCZ.contains("bábovk") || titleCZ.contains("koprov") || titleCZ.contains("rajsk") || titleCZ.contains("segedín")
@@ -275,7 +291,30 @@ fun RecipeScreen(
             if (!matchesCuisine) return@filter false
         }
 
-        // Standard text query search
+        // Drink specific filters
+        if (activeScreenTab == "alko" && selectedAlcoholType != "vse") {
+            if (!r.alcoholType.lowercase().contains(selectedAlcoholType.lowercase())) {
+                return@filter false
+            }
+        }
+
+        if (activeScreenTab == "alko" && selectedAlcoholStrength != "vse") {
+            val isStrengthMatch = when (selectedAlcoholStrength) {
+                "slaby" -> r.alcoholStrengthCZ.lowercase() == "slabý" || r.alcoholStrengthSK.lowercase() == "slabý"
+                "stredni" -> r.alcoholStrengthCZ.lowercase() == "střední" || r.alcoholStrengthSK.lowercase() == "stredný"
+                "silny" -> r.alcoholStrengthCZ.lowercase() == "silný" || r.alcoholStrengthSK.lowercase() == "silný"
+                else -> true
+            }
+            if (!isStrengthMatch) return@filter false
+        }
+
+        if (activeScreenTab == "alko" && selectedDrinkCategory != "vse") {
+            if (!r.drinkCategory.lowercase().contains(selectedDrinkCategory.lowercase())) {
+                return@filter false
+            }
+        }
+
+        // Standard text query search including drink-specific attributes too
         if (searchRecipeQuery.isNotBlank()) {
             val queryParts = searchRecipeQuery.trim().lowercase().split("\\s+".toRegex()).filter { it.isNotEmpty() }
             if (queryParts.isNotEmpty()) {
@@ -283,7 +322,23 @@ fun RecipeScreen(
                     titleCZ.contains(part) || 
                     titleSK.contains(part) || 
                     ingsCZ.any { it.contains(part) } || 
-                    ingsSK.any { it.contains(part) }
+                    ingsSK.any { it.contains(part) } ||
+                    // Drink attributes
+                    (r.category == "alko" && (
+                        r.descriptionCZ.lowercase().contains(part) ||
+                        r.descriptionSK.lowercase().contains(part) ||
+                        r.glassCZ.lowercase().contains(part) ||
+                        r.glassSK.lowercase().contains(part) ||
+                        r.difficultyCZ.lowercase().contains(part) ||
+                        r.difficultySK.lowercase().contains(part) ||
+                        r.alcoholStrengthCZ.lowercase().contains(part) ||
+                        r.alcoholStrengthSK.lowercase().contains(part) ||
+                        r.alcoholVol.lowercase().contains(part) ||
+                        r.alcoholType.lowercase().contains(part) ||
+                        r.drinkCategory.lowercase().contains(part) ||
+                        r.garnishCZ.lowercase().contains(part) ||
+                        r.garnishSK.lowercase().contains(part)
+                    ))
                 }
                 if (!matchAllParts) return@filter false
             }
@@ -348,7 +403,7 @@ fun RecipeScreen(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Category-focused navigation tabs (Obědy, Večeře, Dezerty/Buchty, Nápoje)
+            // Category-focused navigation tabs (Obědy, Večeře, Dezerty a buchty, Nápoje, Drinky)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -358,8 +413,10 @@ fun RecipeScreen(
                 val tabs = listOf(
                     Triple("obed", "Obědy 🍲", "Obedy 🍲"),
                     Triple("vecere", "Večeře 🌙", "Večera 🌙"),
-                    Triple("dezert", "Dezerty/Buchty 🍰", "Dezerty/Buchty 🍰"),
-                    Triple("piti", "Nápoje 🍹", "Nápoje 🍹")
+                    Triple("dezert", "Dezerty a buchty 🍰", "Dezerty a buchty 🍰"),
+                    Triple("piti", "Nápoje 🍹", "Nápoje 🍹"),
+                    Triple("alko", "Drinky 🍸", "Drinky 🍸"),
+                    Triple("ChefAI", "✨ Chef AI", "✨ Chef AI")
                 )
 
                 tabs.forEach { (tabKey, nameCZ, nameSK) ->
@@ -386,7 +443,7 @@ fun RecipeScreen(
         var showAdvancedFilters by remember { mutableStateOf(false) }
 
         when (activeScreenTab) {
-            "obed", "vecere", "dezert", "piti" -> {
+            "obed", "vecere", "dezert", "piti", "alko" -> {
                 // Search Row with Toggle
                 Row(
                     modifier = Modifier
@@ -418,7 +475,7 @@ fun RecipeScreen(
                         },
                         placeholder = {
                             Text(
-                                text = if (isSlovak) "Hľadať recept..." else "Hledat recept...",
+                                text = if (isSlovak) "Hľadať recept alebo surovinu..." else "Hledat recept nebo surovinu...",
                                 color = CaptionTextNatural.copy(alpha = 0.7f),
                                 fontSize = 13.sp
                             )
@@ -502,6 +559,9 @@ fun RecipeScreen(
                                             selectedDifficulty = "vse"
                                             selectedPrepMethod = "vse"
                                             selectedCuisine = "vse"
+                                            selectedAlcoholType = "vse"
+                                            selectedAlcoholStrength = "vse"
+                                            selectedDrinkCategory = "vse"
                                         },
                                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                                         colors = ButtonDefaults.textButtonColors(contentColor = FreshGreenPrimary)
@@ -557,302 +617,486 @@ fun RecipeScreen(
                                 )
                             }
 
-                            // 2. Chod a Příležitost
-                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Text(
-                                    text = if (isSlovak) "2. Kategórie & Príležitosti" else "2. Kategorie & Příležitosti",
-                                    color = FreshGreenPrimary,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-
-                                Text(if (isSlovak) "Kategórie jedál:" else "Kategorie jídel:", color = CaptionTextNatural, fontSize = 10.sp)
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    val categories = listOf(
-                                        Triple("vse", "Všechny 🍽️", "Všetky 🍽️"),
-                                        Triple("polevky", "Polévky 🍜", "Polievky 🍜"),
-                                        Triple("hlavni", "Hlavní jídla 🥩", "Hlavné jedlá 🥩"),
-                                        Triple("snidane", "Snídaně / Svačiny ☕", "Raňajky / Desiate ☕"),
-                                        Triple("dezerty", "Dezerty & Moučníky 🍰", "Dezerty 🍰"),
-                                        Triple("chutovky", "Chuťovky k pivu/vínu 🧀", "Chuťovky k pivu/vínu 🧀")
+                            if (activeScreenTab != "alko") {
+                                // 2. Chod a Příležitost
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text(
+                                        text = if (isSlovak) "2. Kategórie & Príležitosti" else "2. Kategorie & Příležitosti",
+                                        color = FreshGreenPrimary,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
                                     )
-                                    categories.forEach { (key, nameCZ, nameSK) ->
-                                        val isSelected = selectedMealCategory == key
-                                        ElevatedFilterChip(
-                                            selected = isSelected,
-                                            onClick = { selectedMealCategory = key },
-                                            label = { Text(if (isSlovak) nameSK else nameCZ, fontSize = 10.sp, fontWeight = FontWeight.SemiBold) },
-                                            shape = RoundedCornerShape(30.dp),
-                                            colors = FilterChipDefaults.elevatedFilterChipColors(
-                                                selectedContainerColor = SoftGreenGlow,
-                                                selectedLabelColor = FreshGreenPrimary,
-                                                containerColor = DarkBg,
-                                                labelColor = CreamText
-                                            )
+
+                                    Text(if (isSlovak) "Kategórie jedál:" else "Kategorie jídel:", color = CaptionTextNatural, fontSize = 10.sp)
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        val categories = listOf(
+                                            Triple("vse", "Všechny 🍽️", "Všetky 🍽️"),
+                                            Triple("polevky", "Polévky 🍜", "Polievky 🍜"),
+                                            Triple("hlavni", "Hlavní jídla 🥩", "Hlavné jedlá 🥩"),
+                                            Triple("snidane", "Snídaně / Svačiny ☕", "Raňajky / Desiate ☕"),
+                                            Triple("dezerty", "Dezerty & Moučníky 🍰", "Dezerty 🍰"),
+                                            Triple("chutovky", "Chuťovky k pivu/vínu 🧀", "Chuťovky k pivu/vínu 🧀")
                                         )
+                                        categories.forEach { (key, nameCZ, nameSK) ->
+                                            val isSelected = selectedMealCategory == key
+                                            ElevatedFilterChip(
+                                                selected = isSelected,
+                                                onClick = { selectedMealCategory = key },
+                                                label = { Text(if (isSlovak) nameSK else nameCZ, fontSize = 10.sp, fontWeight = FontWeight.SemiBold) },
+                                                shape = RoundedCornerShape(30.dp),
+                                                colors = FilterChipDefaults.elevatedFilterChipColors(
+                                                    selectedContainerColor = SoftGreenGlow,
+                                                    selectedLabelColor = FreshGreenPrimary,
+                                                    containerColor = DarkBg,
+                                                    labelColor = CreamText
+                                                )
+                                            )
+                                        }
+                                    }
+
+                                    Text(if (isSlovak) "Príležitosť:" else "Příležitost:", color = CaptionTextNatural, fontSize = 10.sp)
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        val occasions = listOf(
+                                            Triple("vse", "Jakákoliv 📅", "Akákoľvek 📅"),
+                                            Triple("rychly_obed", "Rychlý oběd ⚡", "Rýchly obed ⚡"),
+                                            Triple("slavnostni_vecere", "Slavnostní večeře ✨", "Slávnostná večera ✨"),
+                                            Triple("vanoce", "Vánoce 🎄", "Vianoce 🎄"),
+                                            Triple("velikonoce", "Velikonoce 🐣", "Veľká noc 🐣"),
+                                            Triple("grilovani", "Grilování 🔥", "Grilovanie 🔥")
+                                        )
+                                        occasions.forEach { (key, nameCZ, nameSK) ->
+                                            val isSelected = selectedOccasion == key
+                                            ElevatedFilterChip(
+                                                selected = isSelected,
+                                                onClick = { selectedOccasion = key },
+                                                label = { Text(if (isSlovak) nameSK else nameCZ, fontSize = 10.sp, fontWeight = FontWeight.SemiBold) },
+                                                shape = RoundedCornerShape(30.dp),
+                                                colors = FilterChipDefaults.elevatedFilterChipColors(
+                                                    selectedContainerColor = SoftGreenGlow,
+                                                    selectedLabelColor = FreshGreenPrimary,
+                                                    containerColor = DarkBg,
+                                                    labelColor = CreamText
+                                                )
+                                            )
+                                        }
                                     }
                                 }
 
-                                Text(if (isSlovak) "Príležitosť:" else "Příležitost:", color = CaptionTextNatural, fontSize = 10.sp)
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    val occasions = listOf(
-                                        Triple("vse", "Jakákoliv 📅", "Akákoľvek 📅"),
-                                        Triple("rychly_obed", "Rychlý oběd ⚡", "Rýchly obed ⚡"),
-                                        Triple("slavnostni_vecere", "Slavnostní večeře ✨", "Slávnostná večera ✨"),
-                                        Triple("vanoce", "Vánoce 🎄", "Vianoce 🎄"),
-                                        Triple("velikonoce", "Velikonoce 🐣", "Veľká noc 🐣"),
-                                        Triple("grilovani", "Grilování 🔥", "Grilovanie 🔥")
+                                // 3. Diety a nutriční hodnoty
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text(
+                                        text = if (isSlovak) "3. Diéty a nutričné hodnoty" else "3. Diety a nutriční hodnoty",
+                                        color = FreshGreenPrimary,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
                                     )
-                                    occasions.forEach { (key, nameCZ, nameSK) ->
-                                        val isSelected = selectedOccasion == key
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
                                         ElevatedFilterChip(
-                                            selected = isSelected,
-                                            onClick = { selectedOccasion = key },
-                                            label = { Text(if (isSlovak) nameSK else nameCZ, fontSize = 10.sp, fontWeight = FontWeight.SemiBold) },
+                                            selected = filterGlutenFree,
+                                            onClick = { filterGlutenFree = !filterGlutenFree },
+                                            label = { Text("Bezlepkové 🌾", fontSize = 10.sp) },
                                             shape = RoundedCornerShape(30.dp),
-                                            colors = FilterChipDefaults.elevatedFilterChipColors(
-                                                selectedContainerColor = SoftGreenGlow,
-                                                selectedLabelColor = FreshGreenPrimary,
-                                                containerColor = DarkBg,
-                                                labelColor = CreamText
-                                            )
+                                            colors = FilterChipDefaults.elevatedFilterChipColors(selectedContainerColor = SoftGreenGlow, selectedLabelColor = FreshGreenPrimary, containerColor = DarkBg)
+                                        )
+                                        ElevatedFilterChip(
+                                            selected = filterLactoseFree,
+                                            onClick = { filterLactoseFree = !filterLactoseFree },
+                                            label = { Text("Bez laktózy 🥛", fontSize = 10.sp) },
+                                            shape = RoundedCornerShape(30.dp),
+                                            colors = FilterChipDefaults.elevatedFilterChipColors(selectedContainerColor = SoftGreenGlow, selectedLabelColor = FreshGreenPrimary, containerColor = DarkBg)
+                                        )
+                                        ElevatedFilterChip(
+                                            selected = filterVegetarian,
+                                            onClick = { filterVegetarian = !filterVegetarian },
+                                            label = { Text("Vegetariánské 🥦", fontSize = 10.sp) },
+                                            shape = RoundedCornerShape(30.dp),
+                                            colors = FilterChipDefaults.elevatedFilterChipColors(selectedContainerColor = SoftGreenGlow, selectedLabelColor = FreshGreenPrimary, containerColor = DarkBg)
+                                        )
+                                        ElevatedFilterChip(
+                                            selected = filterVegan,
+                                            onClick = { filterVegan = !filterVegan },
+                                            label = { Text("Veganské 🌱", fontSize = 10.sp) },
+                                            shape = RoundedCornerShape(30.dp),
+                                            colors = FilterChipDefaults.elevatedFilterChipColors(selectedContainerColor = SoftGreenGlow, selectedLabelColor = FreshGreenPrimary, containerColor = DarkBg)
+                                        )
+                                        ElevatedFilterChip(
+                                            selected = filterLowCarb,
+                                            onClick = { filterLowCarb = !filterLowCarb },
+                                            label = { Text("Low-carb 🥑", fontSize = 10.sp) },
+                                            shape = RoundedCornerShape(30.dp),
+                                            colors = FilterChipDefaults.elevatedFilterChipColors(selectedContainerColor = SoftGreenGlow, selectedLabelColor = FreshGreenPrimary, containerColor = DarkBg)
+                                        )
+                                        ElevatedFilterChip(
+                                            selected = filterHighProtein,
+                                            onClick = { filterHighProtein = !filterHighProtein },
+                                            label = { Text("Vysoký protein 💪", fontSize = 10.sp) },
+                                            shape = RoundedCornerShape(30.dp),
+                                            colors = FilterChipDefaults.elevatedFilterChipColors(selectedContainerColor = SoftGreenGlow, selectedLabelColor = FreshGreenPrimary, containerColor = DarkBg)
                                         )
                                     }
-                                }
-                            }
 
-                            // 3. Diety a nutriční hodnoty
-                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Text(
-                                    text = if (isSlovak) "3. Diéty a nutričné hodnoty" else "3. Diety a nutriční hodnoty",
-                                    color = FreshGreenPrimary,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    ElevatedFilterChip(
-                                        selected = filterGlutenFree,
-                                        onClick = { filterGlutenFree = !filterGlutenFree },
-                                        label = { Text("Bezlepkové 🌾", fontSize = 10.sp) },
-                                        shape = RoundedCornerShape(30.dp),
-                                        colors = FilterChipDefaults.elevatedFilterChipColors(selectedContainerColor = SoftGreenGlow, selectedLabelColor = FreshGreenPrimary, containerColor = DarkBg)
-                                    )
-                                    ElevatedFilterChip(
-                                        selected = filterLactoseFree,
-                                        onClick = { filterLactoseFree = !filterLactoseFree },
-                                        label = { Text("Bez laktózy 🥛", fontSize = 10.sp) },
-                                        shape = RoundedCornerShape(30.dp),
-                                        colors = FilterChipDefaults.elevatedFilterChipColors(selectedContainerColor = SoftGreenGlow, selectedLabelColor = FreshGreenPrimary, containerColor = DarkBg)
-                                    )
-                                    ElevatedFilterChip(
-                                        selected = filterVegetarian,
-                                        onClick = { filterVegetarian = !filterVegetarian },
-                                        label = { Text("Vegetariánské 🥦", fontSize = 10.sp) },
-                                        shape = RoundedCornerShape(30.dp),
-                                        colors = FilterChipDefaults.elevatedFilterChipColors(selectedContainerColor = SoftGreenGlow, selectedLabelColor = FreshGreenPrimary, containerColor = DarkBg)
-                                    )
-                                    ElevatedFilterChip(
-                                        selected = filterVegan,
-                                        onClick = { filterVegan = !filterVegan },
-                                        label = { Text("Veganské 🌱", fontSize = 10.sp) },
-                                        shape = RoundedCornerShape(30.dp),
-                                        colors = FilterChipDefaults.elevatedFilterChipColors(selectedContainerColor = SoftGreenGlow, selectedLabelColor = FreshGreenPrimary, containerColor = DarkBg)
-                                    )
-                                    ElevatedFilterChip(
-                                        selected = filterLowCarb,
-                                        onClick = { filterLowCarb = !filterLowCarb },
-                                        label = { Text("Low-carb 🥑", fontSize = 10.sp) },
-                                        shape = RoundedCornerShape(30.dp),
-                                        colors = FilterChipDefaults.elevatedFilterChipColors(selectedContainerColor = SoftGreenGlow, selectedLabelColor = FreshGreenPrimary, containerColor = DarkBg)
-                                    )
-                                    ElevatedFilterChip(
-                                        selected = filterHighProtein,
-                                        onClick = { filterHighProtein = !filterHighProtein },
-                                        label = { Text("Vysoký protein 💪", fontSize = 10.sp) },
-                                        shape = RoundedCornerShape(30.dp),
-                                        colors = FilterChipDefaults.elevatedFilterChipColors(selectedContainerColor = SoftGreenGlow, selectedLabelColor = FreshGreenPrimary, containerColor = DarkBg)
-                                    )
-                                }
-
-                                Text(if (isSlovak) "Max kalórií:" else "Max kalorií:", color = CaptionTextNatural, fontSize = 10.sp)
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    val calorieOptions = listOf(
-                                        null to (if (isSlovak) "Lubovoľné" else "Libovolné"),
-                                        300 to "Do 300 kcal",
-                                        500 to "Do 500 kcal",
-                                        800 to "Do 800 kcal"
-                                    )
-                                    calorieOptions.forEach { (limit, name) ->
-                                        val isSelected = maxCaloriesLimit == limit
-                                        ElevatedFilterChip(
-                                            selected = isSelected,
-                                            onClick = { maxCaloriesLimit = limit },
-                                            label = { Text(name, fontSize = 10.sp, fontWeight = FontWeight.SemiBold) },
-                                            shape = RoundedCornerShape(30.dp),
-                                            colors = FilterChipDefaults.elevatedFilterChipColors(
-                                                selectedContainerColor = SoftGreenGlow,
-                                                selectedLabelColor = FreshGreenPrimary,
-                                                containerColor = DarkBg,
-                                                labelColor = CreamText
-                                            )
+                                    Text(if (isSlovak) "Max kalórií:" else "Max kalorií:", color = CaptionTextNatural, fontSize = 10.sp)
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        val calorieOptions = listOf(
+                                            null to (if (isSlovak) "Lubovoľné" else "Libovolné"),
+                                            300 to "Do 300 kcal",
+                                            500 to "Do 500 kcal",
+                                            800 to "Do 800 kcal"
                                         )
-                                    }
-                                }
-                            }
-
-                            // 4. Náročnost a čas přípravy
-                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Text(
-                                    text = if (isSlovak) "4. Náročnosť a čas" else "4. Náročnost a čas",
-                                    color = FreshGreenPrimary,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-
-                                Text(if (isSlovak) "Doba prípravy:" else "Doba přípravy:", color = CaptionTextNatural, fontSize = 10.sp)
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    val times = listOf(
-                                        "vse" to (if (isSlovak) "Akákoľvek" else "Jakákoliv"),
-                                        "15m" to "Do 15 minut",
-                                        "30m" to "Do 30 minut",
-                                        "60m" to "Do hodiny",
-                                        "long" to (if (isSlovak) "Dlhé pečenie (>2h)" else "Dlouhé pečení (>2h)")
-                                    )
-                                    times.forEach { (key, name) ->
-                                        val isSelected = maxPrepTimeCategory == key
-                                        ElevatedFilterChip(
-                                            selected = isSelected,
-                                            onClick = { maxPrepTimeCategory = key },
-                                            label = { Text(name, fontSize = 10.sp, fontWeight = FontWeight.SemiBold) },
-                                            shape = RoundedCornerShape(30.dp),
-                                            colors = FilterChipDefaults.elevatedFilterChipColors(
-                                                selectedContainerColor = SoftGreenGlow,
-                                                selectedLabelColor = FreshGreenPrimary,
-                                                containerColor = DarkBg,
-                                                labelColor = CreamText
+                                        calorieOptions.forEach { (limit, name) ->
+                                            val isSelected = maxCaloriesLimit == limit
+                                            ElevatedFilterChip(
+                                                selected = isSelected,
+                                                onClick = { maxCaloriesLimit = limit },
+                                                label = { Text(name, fontSize = 10.sp, fontWeight = FontWeight.SemiBold) },
+                                                shape = RoundedCornerShape(30.dp),
+                                                colors = FilterChipDefaults.elevatedFilterChipColors(
+                                                    selectedContainerColor = SoftGreenGlow,
+                                                    selectedLabelColor = FreshGreenPrimary,
+                                                    containerColor = DarkBg,
+                                                    labelColor = CreamText
+                                                )
                                             )
-                                        )
+                                        }
                                     }
                                 }
 
-                                Text(if (isSlovak) "Náročnosť:" else "Náročnost:", color = CaptionTextNatural, fontSize = 10.sp)
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    val levels = listOf(
-                                        Triple("vse", "Jakákoliv ⚔️", "Akákoľvek ⚔️"),
-                                        Triple("zacatecnik", "Začátečník 🌱", "Začiatočník 🌱"),
-                                        Triple("pokrocily", "Pokročilý ⚙️", "Pokročilý ⚙️"),
-                                        Triple("masterchef", "Masterchef 👑", "Masterchef 👑")
+                                // 4. Náročnost a čas přípravy
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text(
+                                        text = if (isSlovak) "4. Náročnosť a čas" else "4. Náročnost a čas",
+                                        color = FreshGreenPrimary,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
                                     )
-                                    levels.forEach { (key, nameCZ, nameSK) ->
-                                        val isSelected = selectedDifficulty == key
-                                        ElevatedFilterChip(
-                                            selected = isSelected,
-                                            onClick = { selectedDifficulty = key },
-                                            label = { Text(if (isSlovak) nameSK else nameCZ, fontSize = 10.sp, fontWeight = FontWeight.SemiBold) },
-                                            shape = RoundedCornerShape(30.dp),
-                                            colors = FilterChipDefaults.elevatedFilterChipColors(
-                                                selectedContainerColor = SoftGreenGlow,
-                                                selectedLabelColor = FreshGreenPrimary,
-                                                containerColor = DarkBg,
-                                                labelColor = CreamText
-                                            )
+
+                                    Text(if (isSlovak) "Doba prípravy:" else "Doba přípravy:", color = CaptionTextNatural, fontSize = 10.sp)
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        val times = listOf(
+                                            "vse" to (if (isSlovak) "Akákoľvek" else "Jakákoliv"),
+                                            "15m" to "Do 15 minut",
+                                            "30m" to "Do 30 minut",
+                                            "60m" to "Do hodiny",
+                                            "long" to (if (isSlovak) "Dlhé pečenie (>2h)" else "Dlouhé pečení (>2h)")
                                         )
+                                        times.forEach { (key, name) ->
+                                            val isSelected = maxPrepTimeCategory == key
+                                            ElevatedFilterChip(
+                                                selected = isSelected,
+                                                onClick = { maxPrepTimeCategory = key },
+                                                label = { Text(name, fontSize = 10.sp, fontWeight = FontWeight.SemiBold) },
+                                                shape = RoundedCornerShape(30.dp),
+                                                colors = FilterChipDefaults.elevatedFilterChipColors(
+                                                    selectedContainerColor = SoftGreenGlow,
+                                                    selectedLabelColor = FreshGreenPrimary,
+                                                    containerColor = DarkBg,
+                                                    labelColor = CreamText
+                                                )
+                                            )
+                                        }
+                                    }
+
+                                    Text(if (isSlovak) "Náročnosť:" else "Náročnost:", color = CaptionTextNatural, fontSize = 10.sp)
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        val levels = listOf(
+                                            Triple("vse", "Jakákoliv ⚔️", "Akákoľvek ⚔️"),
+                                            Triple("zacatecnik", "Začátečník 🌱", "Začiatočník 🌱"),
+                                            Triple("pokrocily", "Pokročilý ⚙️", "Pokročilý ⚙️"),
+                                            Triple("masterchef", "Masterchef 👑", "Masterchef 👑")
+                                        )
+                                        levels.forEach { (key, nameCZ, nameSK) ->
+                                            val isSelected = selectedDifficulty == key
+                                            ElevatedFilterChip(
+                                                selected = isSelected,
+                                                onClick = { selectedDifficulty = key },
+                                                label = { Text(if (isSlovak) nameSK else nameCZ, fontSize = 10.sp, fontWeight = FontWeight.SemiBold) },
+                                                shape = RoundedCornerShape(30.dp),
+                                                colors = FilterChipDefaults.elevatedFilterChipColors(
+                                                    selectedContainerColor = SoftGreenGlow,
+                                                    selectedLabelColor = FreshGreenPrimary,
+                                                    containerColor = DarkBg,
+                                                    labelColor = CreamText
+                                                )
+                                            )
+                                        }
                                     }
                                 }
-                            }
 
-                            // 5. Technologie
-                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Text(
-                                    text = if (isSlovak) "5. Spôsob prípravy (Technológia)" else "5. Způsob přípravy (Technologie)",
-                                    color = FreshGreenPrimary,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    val methods = listOf(
-                                        Triple("vse", "Jakýkoliv 🍽️", "Akýkoľvek 🍽️"),
-                                        Triple("vareni", "Vaření 🍲", "Varenie 🍲"),
-                                        Triple("peceni", "Pečení 🥧", "Pečenie 🥧"),
-                                        Triple("smazeni", "Smažení 🍳", "Vyprážanie 🍳"),
-                                        Triple("duseni", "Dušení 🥩", "Dusenie 🥩"),
-                                        Triple("grilovani", "Grilování ♨️", "Grilovanie ♨️"),
-                                        Triple("studena", "Studená kuchyně 🥗", "Studená kuchyňa 🥗")
+                                // 5. Technologie
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text(
+                                        text = if (isSlovak) "5. Spôsob prípravy (Technológia)" else "5. Způsob přípravy (Technologie)",
+                                        color = FreshGreenPrimary,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
                                     )
-                                    methods.forEach { (key, nameCZ, nameSK) ->
-                                        val isSelected = selectedPrepMethod == key
-                                        ElevatedFilterChip(
-                                            selected = isSelected,
-                                            onClick = { selectedPrepMethod = key },
-                                            label = { Text(if (isSlovak) nameSK else nameCZ, fontSize = 10.sp, fontWeight = FontWeight.SemiBold) },
-                                            shape = RoundedCornerShape(30.dp),
-                                            colors = FilterChipDefaults.elevatedFilterChipColors(
-                                                selectedContainerColor = SoftGreenGlow,
-                                                selectedLabelColor = FreshGreenPrimary,
-                                                containerColor = DarkBg,
-                                                labelColor = CreamText
-                                            )
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        val methods = listOf(
+                                            Triple("vse", "Jakýkoliv 🍽️", "Akýkoľvek 🍽️"),
+                                            Triple("vareni", "Vaření 🍲", "Varenie 🍲"),
+                                            Triple("peceni", "Pečení 🥧", "Pečenie 🥧"),
+                                            Triple("smazeni", "Smažení 🍳", "Vyprážanie 🍳"),
+                                            Triple("duseni", "Dušení 🥩", "Dusenie 🥩"),
+                                            Triple("grilovani", "Grilování ♨️", "Grilovanie ♨️"),
+                                            Triple("studena", "Studená kuchyně 🥗", "Studená kuchyňa 🥗")
                                         )
+                                        methods.forEach { (key, nameCZ, nameSK) ->
+                                            val isSelected = selectedPrepMethod == key
+                                            ElevatedFilterChip(
+                                                selected = isSelected,
+                                                onClick = { selectedPrepMethod = key },
+                                                label = { Text(if (isSlovak) nameSK else nameCZ, fontSize = 10.sp, fontWeight = FontWeight.SemiBold) },
+                                                shape = RoundedCornerShape(30.dp),
+                                                colors = FilterChipDefaults.elevatedFilterChipColors(
+                                                    selectedContainerColor = SoftGreenGlow,
+                                                    selectedLabelColor = FreshGreenPrimary,
+                                                    containerColor = DarkBg,
+                                                    labelColor = CreamText
+                                                )
+                                            )
+                                        }
                                     }
                                 }
-                            }
 
-                            // 6. Kuchyně
-                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Text(
-                                    text = if (isSlovak) "6. Pôvod a štýl kuchyne" else "6. Původ a styl kuchyně",
-                                    color = FreshGreenPrimary,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    val cuisines = listOf(
-                                        Triple("vse", "Jakýkoliv 🗺️", "Akýkoľvek 🗺️"),
-                                        Triple("ceska", "Tradiční česká 🇨🇿", "Tradičná česká 🇨🇿"),
-                                        Triple("regionalni", "Regionální 🏔️", "Regionálna 🏔️"),
-                                        Triple("asijska", "Asijská 🍜", "Ázijská 🍜"),
-                                        Triple("italska", "Italská 🍕", "Talianska 🍕"),
-                                        Triple("retro", "Retro klasika ⚓", "Retro klasika ⚓")
+                                // 6. Kuchyně
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text(
+                                        text = if (isSlovak) "6. Pôvod a štýl kuchyne" else "6. Původ a styl kuchyně",
+                                        color = FreshGreenPrimary,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
                                     )
-                                    cuisines.forEach { (key, nameCZ, nameSK) ->
-                                        val isSelected = selectedCuisine == key
-                                        ElevatedFilterChip(
-                                            selected = isSelected,
-                                            onClick = { selectedCuisine = key },
-                                            label = { Text(if (isSlovak) nameSK else nameCZ, fontSize = 10.sp, fontWeight = FontWeight.SemiBold) },
-                                            shape = RoundedCornerShape(30.dp),
-                                            colors = FilterChipDefaults.elevatedFilterChipColors(
-                                                selectedContainerColor = SoftGreenGlow,
-                                                selectedLabelColor = FreshGreenPrimary,
-                                                containerColor = DarkBg,
-                                                labelColor = CreamText
-                                            )
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        val cuisines = listOf(
+                                            Triple("vse", "Jakýkoliv 🗺️", "Akýkoľvek 🗺️"),
+                                            Triple("ceska", "Tradiční česká 🇨🇿", "Tradičná česká 🇨🇿"),
+                                            Triple("regionalni", "Regionální 🏔️", "Regionálna 🏔️"),
+                                            Triple("asijska", "Asijská 🍜", "Ázijská 🍜"),
+                                            Triple("italska", "Italská 🍕", "Talianska 🍕"),
+                                            Triple("retro", "Retro klasika ⚓", "Retro klasika ⚓")
                                         )
+                                        cuisines.forEach { (key, nameCZ, nameSK) ->
+                                            val isSelected = selectedCuisine == key
+                                            ElevatedFilterChip(
+                                                selected = isSelected,
+                                                onClick = { selectedCuisine = key },
+                                                label = { Text(if (isSlovak) nameSK else nameCZ, fontSize = 10.sp, fontWeight = FontWeight.SemiBold) },
+                                                shape = RoundedCornerShape(30.dp),
+                                                colors = FilterChipDefaults.elevatedFilterChipColors(
+                                                    selectedContainerColor = SoftGreenGlow,
+                                                    selectedLabelColor = FreshGreenPrimary,
+                                                    containerColor = DarkBg,
+                                                    labelColor = CreamText
+                                                )
+                                            )
+                                        }
+                                    }
+                                }
+                            } else {
+                                // --- DRINKS SPECIFIC FILTERS ---
+                                // 2. Typ alkoholu / Báza
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text(
+                                        text = if (isSlovak) "2. Alkoholová báza" else "2. Alkoholová báze",
+                                        color = FreshGreenPrimary,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        val alcoholTypes = listOf(
+                                            "vse" to (if (isSlovak) "Všetko 🍶" else "Všechno 🍶"),
+                                            "Rum" to "Rum 🥃",
+                                            "Tequila" to "Tequila 🌵",
+                                            "Gin" to "Gin 🍸",
+                                            "Vodka" to "Vodka 🧪",
+                                            "Whisky" to "Whisky 🪵",
+                                            "Prosecco" to "Prosecco 🥂",
+                                            "Likér" to "Likér 🧉"
+                                        )
+                                        alcoholTypes.forEach { (key, label) ->
+                                            val isSelected = selectedAlcoholType == key
+                                            ElevatedFilterChip(
+                                                selected = isSelected,
+                                                onClick = { selectedAlcoholType = key },
+                                                label = { Text(label, fontSize = 10.sp, fontWeight = FontWeight.SemiBold) },
+                                                shape = RoundedCornerShape(30.dp),
+                                                colors = FilterChipDefaults.elevatedFilterChipColors(
+                                                    selectedContainerColor = SoftGreenGlow,
+                                                    selectedLabelColor = FreshGreenPrimary,
+                                                    containerColor = DarkBg,
+                                                    labelColor = CreamText
+                                                )
+                                            )
+                                        }
+                                    }
+                                }
+
+                                // 3. Síla / Obsah alkoholu
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text(
+                                        text = if (isSlovak) "3. Sila / Obsah alkoholu" else "3. Síla / Obsah alkoholu",
+                                        color = FreshGreenPrimary,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        val strengths = listOf(
+                                            Triple("vse", "Jakákoliv ⚖️", "Akákoľvek ⚖️"),
+                                            Triple("slaby", "Slabý (do 10%) 🍷", "Slabý (do 10%) 🍷"),
+                                            Triple("stredni", "Střední (10-20%) 🍹", "Stredný (10-20%) 🍹"),
+                                            Triple("silny", "Silný (nad 20%) 🥃", "Silný (nad 20%) 🥃")
+                                        )
+                                        strengths.forEach { (key, czName, skName) ->
+                                            val isSelected = selectedAlcoholStrength == key
+                                            val label = if (isSlovak) skName else czName
+                                            ElevatedFilterChip(
+                                                selected = isSelected,
+                                                onClick = { selectedAlcoholStrength = key },
+                                                label = { Text(label, fontSize = 10.sp, fontWeight = FontWeight.SemiBold) },
+                                                shape = RoundedCornerShape(30.dp),
+                                                colors = FilterChipDefaults.elevatedFilterChipColors(
+                                                    selectedContainerColor = SoftGreenGlow,
+                                                    selectedLabelColor = FreshGreenPrimary,
+                                                    containerColor = DarkBg,
+                                                    labelColor = CreamText
+                                                )
+                                            )
+                                        }
+                                    }
+                                }
+
+                                // 4. Kategorie koktejlu
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text(
+                                        text = if (isSlovak) "4. Kategória koktailov" else "4. Kategorie koktejlů",
+                                        color = FreshGreenPrimary,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        val drinkCats = listOf(
+                                            "vse" to (if (isSlovak) "Všetky 🌍" else "Všechny 🌍"),
+                                            "Klasické koktejly" to "Klasické ⚜️",
+                                            "Letní drinky" to "Letní ☀️",
+                                            "Zimní drinky" to "Zimní ❄️",
+                                            "Shoty" to "Shoty 🎯",
+                                            "Moderní koktejly" to "Moderní 🚀"
+                                        )
+                                        drinkCats.forEach { (key, label) ->
+                                            val isSelected = selectedDrinkCategory == key
+                                            ElevatedFilterChip(
+                                                selected = isSelected,
+                                                onClick = { selectedDrinkCategory = key },
+                                                label = { Text(label, fontSize = 10.sp, fontWeight = FontWeight.SemiBold) },
+                                                shape = RoundedCornerShape(30.dp),
+                                                colors = FilterChipDefaults.elevatedFilterChipColors(
+                                                    selectedContainerColor = SoftGreenGlow,
+                                                    selectedLabelColor = FreshGreenPrimary,
+                                                    containerColor = DarkBg,
+                                                    labelColor = CreamText
+                                                )
+                                            )
+                                        }
+                                    }
+                                }
+
+                                // 5. Náročnost a čas (SHARED & PERFECTLY COMPATIBLE FOR DRINKS!)
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text(
+                                        text = if (isSlovak) "5. Náročnosť a čas prípravy" else "5. Náročnost a čas přípravy",
+                                        color = FreshGreenPrimary,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+
+                                    Text(if (isSlovak) "Doba prípravy:" else "Doba přípravy:", color = CaptionTextNatural, fontSize = 10.sp)
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        val times = listOf(
+                                            "vse" to (if (isSlovak) "Akákoľvek" else "Jakákoliv"),
+                                            "15m" to "Do 15 minut",
+                                            "30m" to "Do 30 minut",
+                                            "60m" to "Do hodiny"
+                                        )
+                                        times.forEach { (key, name) ->
+                                            val isSelected = maxPrepTimeCategory == key
+                                            ElevatedFilterChip(
+                                                selected = isSelected,
+                                                onClick = { maxPrepTimeCategory = key },
+                                                label = { Text(name, fontSize = 10.sp, fontWeight = FontWeight.SemiBold) },
+                                                shape = RoundedCornerShape(30.dp),
+                                                colors = FilterChipDefaults.elevatedFilterChipColors(
+                                                    selectedContainerColor = SoftGreenGlow,
+                                                    selectedLabelColor = FreshGreenPrimary,
+                                                    containerColor = DarkBg,
+                                                    labelColor = CreamText
+                                                )
+                                            )
+                                        }
+                                    }
+
+                                    Text(if (isSlovak) "Náročnosť:" else "Náročnost:", color = CaptionTextNatural, fontSize = 10.sp)
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        val levels = listOf(
+                                            Triple("vse", "Jakákoliv ⚔️", "Akákoľvek ⚔️"),
+                                            Triple("zacatecnik", "Začátečník 🌱", "Začiatočník 🌱"),
+                                            Triple("pokrocily", "Pokročilý ⚙️", "Pokročilý ⚙️"),
+                                            Triple("masterchef", "Masterchef 👑", "Masterchef 👑")
+                                        )
+                                        levels.forEach { (key, nameCZ, nameSK) ->
+                                            val isSelected = selectedDifficulty == key
+                                            ElevatedFilterChip(
+                                                selected = isSelected,
+                                                onClick = { selectedDifficulty = key },
+                                                label = { Text(if (isSlovak) nameSK else nameCZ, fontSize = 10.sp, fontWeight = FontWeight.SemiBold) },
+                                                shape = RoundedCornerShape(30.dp),
+                                                colors = FilterChipDefaults.elevatedFilterChipColors(
+                                                    selectedContainerColor = SoftGreenGlow,
+                                                    selectedLabelColor = FreshGreenPrimary,
+                                                    containerColor = DarkBg,
+                                                    labelColor = CreamText
+                                                )
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -927,6 +1171,15 @@ fun RecipeScreen(
                     }
                 }
             }
+            "ChefAI" -> {
+                ChefAITabContent(
+                    isAiLoading = isAiLoading,
+                    aiRecipeMarkdown = aiRecipeMarkdown,
+                    pantryItems = pantryItems,
+                    viewModel = viewModel,
+                    isSlovak = isSlovak
+                )
+            }
         }
     }
 }
@@ -947,7 +1200,20 @@ data class FeaturedRecipe(
     val instructionsCZ: String,
     val instructionsSK: String,
     val basePrice: Double,
-    val category: String
+    val category: String,
+    val descriptionCZ: String = "",
+    val descriptionSK: String = "",
+    val glassCZ: String = "",
+    val glassSK: String = "",
+    val difficultyCZ: String = "",
+    val difficultySK: String = "",
+    val alcoholStrengthCZ: String = "",
+    val alcoholStrengthSK: String = "",
+    val alcoholVol: String = "",
+    val alcoholType: String = "",
+    val drinkCategory: String = "",
+    val garnishCZ: String = "",
+    val garnishSK: String = ""
 )
 
 @Composable
@@ -1039,6 +1305,24 @@ fun FeaturedRecipeCard(
                     )
                 }
 
+                if (recipe.category == "alko" && recipe.alcoholVol.isNotEmpty()) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.LocalBar,
+                            contentDescription = "Alcohol content",
+                            tint = CaptionTextNatural,
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = recipe.alcoholVol,
+                            color = CaptionTextNatural,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         Icons.Default.Bolt,
@@ -1053,6 +1337,68 @@ fun FeaturedRecipeCard(
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium
                     )
+                }
+            }
+
+            // Description and Tags for Alcoholic Beverages
+            val description = if (isSlovak) recipe.descriptionSK else recipe.descriptionCZ
+            if (recipe.category == "alko" && description.isNotEmpty()) {
+                Text(
+                    text = description,
+                    color = CaptionTextNatural,
+                    fontSize = 12.sp,
+                    lineHeight = 16.sp
+                )
+            }
+
+            val strength = if (isSlovak) recipe.alcoholStrengthSK else recipe.alcoholStrengthCZ
+            if (recipe.category == "alko") {
+                Row(
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    if (recipe.drinkCategory.isNotEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .background(NavBgNatural, RoundedCornerShape(6.dp))
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = recipe.drinkCategory.split(",").first().trim(),
+                                color = MutedTextNatural,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                    if (recipe.alcoholType.isNotEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .background(SoftGreenGlow, RoundedCornerShape(6.dp))
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = recipe.alcoholType,
+                                color = FreshGreenPrimary,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                    if (strength.isNotEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .background(Color(0xFFFFF6F5), RoundedCornerShape(6.dp))
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = strength,
+                                color = TomatoRedTertiary,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
             }
 
@@ -1109,17 +1455,110 @@ fun FeaturedRecipeCard(
                         lineHeight = 18.sp
                     )
 
+                    if (recipe.category == "alko") {
+                        val glass = if (isSlovak) recipe.glassSK else recipe.glassCZ
+                        val difficulty = if (isSlovak) recipe.difficultySK else recipe.difficultyCZ
+                        val garnish = if (isSlovak) recipe.garnishSK else recipe.garnishCZ
+                        
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = NavBgNatural),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = if (isSlovak) "Detaily koktailu ✨" else "Detaily koktejlu ✨",
+                                    color = FreshGreenPrimary,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp
+                                )
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    if (glass.isNotEmpty()) {
+                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text(if (isSlovak) "Pohár:" else "Sklenice:", color = MutedTextNatural, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                            Text(glass, color = CreamText, fontSize = 11.sp)
+                                        }
+                                    }
+                                    if (difficulty.isNotEmpty()) {
+                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text(if (isSlovak) "Náročnosť:" else "Náročnost:", color = MutedTextNatural, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                            Text(difficulty, color = CreamText, fontSize = 11.sp)
+                                        }
+                                    }
+                                    if (strength.isNotEmpty() || recipe.alcoholVol.isNotEmpty()) {
+                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text(if (isSlovak) "Obsah alkoholu:" else "Obsah alkoholu:", color = MutedTextNatural, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                            Text("$strength (${recipe.alcoholVol})", color = CreamText, fontSize = 11.sp)
+                                        }
+                                    }
+                                    if (recipe.alcoholType.isNotEmpty()) {
+                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text(if (isSlovak) "Základ alkoholu:" else "Základ alkoholu:", color = MutedTextNatural, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                            Text(recipe.alcoholType, color = CreamText, fontSize = 11.sp)
+                                        }
+                                    }
+                                    if (garnish.isNotEmpty()) {
+                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text(if (isSlovak) "Ozdoba:" else "Ozdoba:", color = MutedTextNatural, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                            Text(garnish, color = CreamText, fontSize = 11.sp, textAlign = TextAlign.End, modifier = Modifier.weight(1f).padding(start = 8.dp))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     // Missing items with shopping cart addition trigger
                     val missingItems = ingredients.filter { !matchingItems.contains(it) }
 
                     if (ingredients.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = if (isSlovak) "Suroviny na prípravu:" else "Suroviny v receptu:",
-                            color = CreamText,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (isSlovak) "Suroviny na prípravu:" else "Suroviny v receptu:",
+                                color = CreamText,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp
+                            )
+
+                            if (missingItems.isNotEmpty()) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .background(TomatoRedTertiary.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+                                        .clickable {
+                                            missingItems.forEach { item ->
+                                                onAddMissingToShoppingList(item)
+                                            }
+                                        }
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                        .testTag("add_all_missing_to_shopping_list_btn")
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.AddShoppingCart,
+                                        contentDescription = "Add all to shopping list",
+                                        tint = TomatoRedTertiary,
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = if (isSlovak) "+ Kúpiť chýbajúce" else "+ Koupit chybějící",
+                                        color = TomatoRedTertiary,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
 
                         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             ingredients.forEach { item ->

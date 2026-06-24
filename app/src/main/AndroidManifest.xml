@@ -12,6 +12,7 @@
     </queries>
 
     <application
+        android:name=".NutriKalkApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -27,10 +28,49 @@
             android:theme="@style/Theme.MyApplication">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!-- Custom Scheme pro QR kód -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="nutrikalk" android:host="join" />
+            </intent-filter>
+
+            <!-- Deep link pro webové pozvánky (WhatsApp, SMS, atd.) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="join.nutrikalk.app" android:pathPrefix="/family" />
+            </intent-filter>
         </activity>
+        <!-- Quick Settings Tile -->
+        <service
+            android:name=".service.NutriScannerTileService"
+            android:icon="@drawable/ic_scan_tile"
+            android:label="Nutri Skener"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <!-- Widget Receiver -->
+        <receiver
+            android:name=".widget.LiveHomeScreenWidgetReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/live_home_screen_widget_info" />
+        </receiver>
+
     </application>
 
 </manifest>

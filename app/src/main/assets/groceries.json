@@ -1,0 +1,342 @@
+[
+  {
+    "ean": "8593893000101",
+    "znacka": "Madeta",
+    "produkt": "Jihočeský Eidam 30% plátky",
+    "kalorie_100g": 268,
+    "sacharidy_100g": 1.5,
+    "cukry_100g": 1.0,
+    "bilkoviny_100g": 28.0,
+    "tuky_100g": 16.5
+  },
+  {
+    "ean": "8594002611762",
+    "znacka": "Olma",
+    "produkt": "Klasik bílý jogurt 2,7%",
+    "kalorie_100g": 57,
+    "sacharidy_100g": 4.6,
+    "cukry_100g": 4.6,
+    "bilkoviny_100g": 3.7,
+    "tuky_100g": 2.7
+  },
+  {
+    "ean": "8594000282056",
+    "znacka": "Kunín",
+    "produkt": "Smetana ke šlehání 31%",
+    "kalorie_100g": 302,
+    "sacharidy_100g": 3.2,
+    "cukry_100g": 3.2,
+    "bilkoviny_100g": 2.1,
+    "tuky_100g": 31.0
+  },
+  {
+    "ean": "8593893000507",
+    "znacka": "Tatra",
+    "produkt": "Tatra Pikao",
+    "kalorie_100g": 325,
+    "sacharidy_100g": 57.0,
+    "cukry_100g": 57.0,
+    "bilkoviny_100g": 6.8,
+    "tuky_100g": 8.0
+  },
+  {
+    "ean": "8594001030045",
+    "znacka": "Sedlčanský",
+    "produkt": "Sedlčanský Hermelín originál",
+    "kalorie_100g": 320,
+    "sacharidy_100g": 1.0,
+    "cukry_100g": 0.5,
+    "bilkoviny_100g": 19.0,
+    "tuky_100g": 26.5
+  },
+  {
+    "ean": "8594001030618",
+    "znacka": "Král Sýrů",
+    "produkt": "Hermelín Král Sýrů",
+    "kalorie_100g": 331,
+    "sacharidy_100g": 1.5,
+    "cukry_100g": 0.5,
+    "bilkoviny_100g": 18.2,
+    "tuky_100g": 28.0
+  },
+  {
+    "ean": "8594003380063",
+    "znacka": "Želetava",
+    "produkt": "Apetito smetanové",
+    "kalorie_100g": 252,
+    "sacharidy_100g": 5.0,
+    "cukry_100g": 4.5,
+    "bilkoviny_100g": 11.0,
+    "tuky_100g": 20.5
+  },
+  {
+    "ean": "8594001030366",
+    "znacka": "Lučina",
+    "produkt": "Lučina čistá natur",
+    "kalorie_100g": 294,
+    "sacharidy_100g": 2.5,
+    "cukry_100g": 2.5,
+    "bilkoviny_100g": 7.0,
+    "tuky_100g": 28.5
+  },
+  {
+    "ean": "5900820000011",
+    "znacka": "Mlekpol",
+    "produkt": "Łaciate Mleko UHT 3.2%",
+    "kalorie_100g": 60,
+    "sacharidy_100g": 4.7,
+    "cukry_100g": 4.7,
+    "bilkoviny_100g": 3.2,
+    "tuky_100g": 3.2
+  },
+  {
+    "ean": "5900820000516",
+    "znacka": "Mlekovita",
+    "produkt": "Sokół Sýr plátky",
+    "kalorie_100g": 349,
+    "sacharidy_100g": 1.5,
+    "cukry_100g": 0.0,
+    "bilkoviny_100g": 26.0,
+    "tuky_100g": 27.0
+  },
+  {
+    "ean": "5900820000882",
+    "znacka": "Piątnica",
+    "produkt": "Serek wiejski",
+    "kalorie_100g": 97,
+    "sacharidy_100g": 2.0,
+    "cukry_100g": 1.5,
+    "bilkoviny_100g": 11.0,
+    "tuky_100g": 5.0
+  },
+  {
+    "ean": "8595015300052",
+    "znacka": "LE&CO",
+    "produkt": "Šunka nejvyšší jakosti",
+    "kalorie_100g": 105,
+    "sacharidy_100g": 1.0,
+    "cukry_100g": 0.5,
+    "bilkoviny_100g": 19.5,
+    "tuky_100g": 2.5
+  },
+  {
+    "ean": "8595015301011",
+    "znacka": "Pikok",
+    "produkt": "Pikok Pure Šunka",
+    "kalorie_100g": 110,
+    "sacharidy_100g": 0.5,
+    "cukry_100g": 0.2,
+    "bilkoviny_100g": 21.0,
+    "tuky_100g": 3.0
+  },
+  {
+    "ean": "8594002602333",
+    "znacka": "Kostelecké uzeniny",
+    "produkt": "Poctivá šunka",
+    "kalorie_100g": 125,
+    "sacharidy_100g": 1.2,
+    "cukry_100g": 0.5,
+    "bilkoviny_100g": 18.0,
+    "tuky_100g": 5.0
+  },
+  {
+    "ean": "5901070000123",
+    "znacka": "Tarczyński",
+    "produkt": "Kabanosy Exclusive",
+    "kalorie_100g": 485,
+    "sacharidy_100g": 5.0,
+    "cukry_100g": 1.5,
+    "bilkoviny_100g": 26.0,
+    "tuky_100g": 40.0
+  },
+  {
+    "ean": "5901070001557",
+    "znacka": "Sokołów",
+    "produkt": "Szynka eksportowa",
+    "kalorie_100g": 110,
+    "sacharidy_100g": 1.0,
+    "cukry_100g": 0.5,
+    "bilkoviny_100g": 18.0,
+    "tuky_100g": 4.0
+  },
+  {
+    "ean": "8594002700145",
+    "znacka": "Hellmann's",
+    "produkt": "Originál Majonéza",
+    "kalorie_100g": 725,
+    "sacharidy_100g": 1.4,
+    "cukry_100g": 1.3,
+    "bilkoviny_100g": 1.0,
+    "tuky_100g": 79.0
+  },
+  {
+    "ean": "8594002700510",
+    "znacka": "Hellmann's",
+    "produkt": "Tatarská omáčka",
+    "kalorie_100g": 420,
+    "sacharidy_100g": 8.0,
+    "cukry_100g": 5.0,
+    "bilkoviny_100g": 1.0,
+    "tuky_100g": 42.0
+  },
+  {
+    "ean": "5900300000021",
+    "znacka": "Majonez Kielecki",
+    "produkt": "Majonez Kielecki",
+    "kalorie_100g": 626,
+    "sacharidy_100g": 2.2,
+    "cukry_100g": 1.8,
+    "bilkoviny_100g": 1.6,
+    "tuky_100g": 67.0
+  },
+  {
+    "ean": "4337181014197",
+    "znacka": "Crazy Wolf",
+    "produkt": "Crazy Wolf Energy Drink Apple",
+    "kalorie_100g": 45,
+    "sacharidy_100g": 10.5,
+    "cukry_100g": 10.5,
+    "bilkoviny_100g": 0.0,
+    "tuky_100g": 0.0
+  },
+  {
+    "ean": "9006900010014",
+    "znacka": "Red Bull",
+    "produkt": "Red Bull Energy Drink",
+    "kalorie_100g": 46,
+    "sacharidy_100g": 11.0,
+    "cukry_100g": 11.0,
+    "bilkoviny_100g": 0.0,
+    "tuky_100g": 0.0
+  },
+  {
+    "ean": "5901111000111",
+    "znacka": "Black Energy",
+    "produkt": "Black Energy Drink Classic",
+    "kalorie_100g": 44,
+    "sacharidy_100g": 10.8,
+    "cukry_100g": 10.8,
+    "bilkoviny_100g": 0.0,
+    "tuky_100g": 0.0
+  },
+  {
+    "ean": "8594002611763",
+    "znacka": "Tiger",
+    "produkt": "Tiger Energy Drink",
+    "kalorie_100g": 44,
+    "sacharidy_100g": 10.6,
+    "cukry_100g": 10.6,
+    "bilkoviny_100g": 0.0,
+    "tuky_100g": 0.0
+  },
+  {
+    "ean": "8852328100105",
+    "znacka": "Real Thai",
+    "produkt": "Kokosové mléko 400ml",
+    "kalorie_100g": 180,
+    "sacharidy_100g": 2.5,
+    "cukry_100g": 2.0,
+    "bilkoviny_100g": 1.5,
+    "tuky_100g": 18.0
+  },
+  {
+    "ean": "8594002610017",
+    "znacka": "Lagris",
+    "produkt": "Jasmínová rýže",
+    "kalorie_100g": 345,
+    "sacharidy_100g": 78.0,
+    "cukry_100g": 0.2,
+    "bilkoviny_100g": 7.0,
+    "tuky_100g": 0.5
+  },
+  {
+    "ean": "8594002610055",
+    "znacka": "Korunní",
+    "produkt": "Třtinový cukr",
+    "kalorie_100g": 398,
+    "sacharidy_100g": 99.5,
+    "cukry_100g": 99.5,
+    "bilkoviny_100g": 0.0,
+    "tuky_100g": 0.0
+  },
+  {
+    "ean": "8594002610088",
+    "znacka": "Orion",
+    "produkt": "Kakao holandského typu",
+    "kalorie_100g": 320,
+    "sacharidy_100g": 14.0,
+    "cukry_100g": 1.0,
+    "bilkoviny_100g": 20.0,
+    "tuky_100g": 21.0
+  },
+  {
+    "ean": "8594002610099",
+    "znacka": "Saf-instant",
+    "produkt": "Droždí sušené",
+    "kalorie_100g": 395,
+    "sacharidy_100g": 35.0,
+    "cukry_100g": 5.0,
+    "bilkoviny_100g": 45.0,
+    "tuky_100g": 6.0
+  },
+  {
+    "ean": "8595015301050",
+    "znacka": "Hamé",
+    "produkt": "Májka",
+    "kalorie_100g": 280,
+    "sacharidy_100g": 4.0,
+    "cukry_100g": 1.0,
+    "bilkoviny_100g": 10.0,
+    "tuky_100g": 25.0
+  },
+  {
+    "ean": "8595015301051",
+    "znacka": "Adriana",
+    "produkt": "Špagety semolinové",
+    "kalorie_100g": 355,
+    "sacharidy_100g": 72.0,
+    "cukry_100g": 3.0,
+    "bilkoviny_100g": 12.0,
+    "tuky_100g": 1.5
+  },
+  {
+    "ean": "8595015301052",
+    "znacka": "Varmuža",
+    "produkt": "Pochoutkový salát",
+    "kalorie_100g": 290,
+    "sacharidy_100g": 10.0,
+    "cukry_100g": 3.0,
+    "bilkoviny_100g": 5.0,
+    "tuky_100g": 26.0
+  },
+  {
+    "ean": "8595015301053",
+    "znacka": "Babiččina volba",
+    "produkt": "Mouka hladká pšeničná",
+    "kalorie_100g": 348,
+    "sacharidy_100g": 73.0,
+    "cukry_100g": 1.5,
+    "bilkoviny_100g": 10.5,
+    "tuky_100g": 1.2
+  },
+  {
+    "ean": "8595015301054",
+    "znacka": "Vitana",
+    "produkt": "Bujón zeleninový",
+    "kalorie_100g": 210,
+    "sacharidy_100g": 25.0,
+    "cukry_100g": 10.0,
+    "bilkoviny_100g": 10.0,
+    "tuky_100g": 5.0
+  },
+  {
+    "ean": "8595015301055",
+    "znacka": "Kotányi",
+    "produkt": "Mletý černý pepř",
+    "kalorie_100g": 255,
+    "sacharidy_100g": 64.0,
+    "cukry_100g": 0.6,
+    "bilkoviny_100g": 10.0,
+    "tuky_100g": 3.0
+  }
+]
