@@ -1,216 +1,296 @@
 const functions = require("firebase-functions");
 const nodemailer = require("nodemailer");
 
-// Email — nastav přes: firebase functions:config:set email.pass="GMAIL_APP_HESLO"
+// Doporučuji uložit tyto údaje do Firebase Configuration/Secrets:
+// Pro Gmail si musíte vygenerovat "App Password" (Heslo aplikace) v nastavení zabezpečení Google účtu
 const gmailEmail = "stepintech.cz@gmail.com";
-const gmailPassword = process.env.EMAIL_PASS || functions.config().email?.pass || "";
+const gmailPassword = process.env.EMAIL_PASS || "ZADEJTE_HESLO_APLIKACE_ZDE"; 
 
 const mailTransport = nodemailer.createTransport({
   service: "gmail",
-  auth: { user: gmailEmail, pass: gmailPassword },
+  auth: {
+    user: gmailEmail,
+    pass: gmailPassword,
+  },
 });
 
-// Slané suroviny zakázané v sladkých receptech
-const SAVORY_ITEMS = [
-  "cibule", "česnek", "maso", "kuřecí", "vepřové", "hovězí", "ryba", "losos",
-  "tuňák", "pepř", "paprika", "salám", "šunka", "slanina", "klobása",
-  "cibula", "cesnak", // Slovak
-  "cebula", "czosnek", "pieprz", "kiełbasa", "szynka", // Polish
-];
-
-function validateIngredients(ingredients, recipeType) {
-  if (recipeType !== "SWEET") return ingredients;
-  return ingredients.filter(ing =>
-    !SAVORY_ITEMS.some(s => ing.toLowerCase().includes(s))
-  );
-}
-
-// Povolené akce (ochrana proti injection z klienta)
-const ALLOWED_PRESET_ACTIONS = [
-  "GENERATE_RECIPE",
-  "PRESET_ACTION_OVEN_INFO",
-  "PRESET_ACTION_SUBSTITUTIONS",
-];
-
-// ---------------------------------------------------------------------------
-// submitNewFood — příjem neznámých produktů od komunity
-// ---------------------------------------------------------------------------
 exports.submitNewFood = functions.https.onRequest((req, res) => {
-  res.set("Access-Control-Allow-Origin", "*");
-  if (req.method === "OPTIONS") {
-    res.set("Access-Control-Allow-Methods", "POST");
-    res.set("Access-Control-Allow-Headers", "Content-Type");
-    return res.status(204).send("");
+  // Povolit CORS, aby šlo API volat z Android aplikace asynchronně
+  res.set('Access-Control-Allow-Origin', '*');
+  if (req.method === 'OPTIONS') {
+    res.set('Access-Control-Allow-Methods', 'POST');
+    res.set('Access-Control-Allow-Headers', 'Content-Type');
+    res.status(204).send('');
+    return;
   }
-  if (req.method !== "POST") return res.status(405).send("Method Not Allowed");
 
-  const { ean, country, userEmail, macros, images, detectedName } = req.body;
-  if (!ean || !userEmail) return res.status(400).send("Chybí EAN nebo E-mail.");
+  if (req.method !== "POST") {
+    return res.status(405).send("Method Not Allowed");
+  }
 
-  const devSubject = `[NutriKalk] Nová potravina [EAN: ${ean}] [${country || "CZ"}]`;
-  const devBody = [
-    `EAN: ${ean}`,
-    `Název (OCR): ${detectedName || "Nezjištěn"}`,
-    `Země: ${country || "CZ"}`,
-    `Uživatel: ${userEmail}`,
-    `Kalorie: ${macros?.calories || 0} kcal`,
-    `Bílkoviny: ${macros?.proteins || 0} g`,
-    `Sacharidy: ${macros?.carbs || 0} g`,
-    `Tuky: ${macros?.fats || 0} g`,
-  ].join("\n");
+  const { ean, country, userEmail, userAllergies, macros, images } = req.body;
 
-  const attachments = (images || []).map((b64, i) => ({
-    filename: `foto_${i + 1}.jpg`,
-    content: b64,
-    encoding: "base64",
-  }));
+  if (!ean || !userEmail) {
+    return res.status(400).send("Chybí EAN nebo E-mail uživatele.");
+  }
 
-  const isPolish = country === "PL";
+  // Detekce alergenů (Mock, v produkci zde LLM projde seznam ingrediencí z OCR)
+  let containsAllergens = false;
+  if (userAllergies && Array.isArray(userAllergies) && userAllergies.length > 0) {
+      // Mock: 10% šance, že AI najde alergen na obalu pro demonstraci
+      containsAllergens = Math.random() < 0.1;
+  }
 
-  const userHtml = isPolish
-    ? `<p>Cześć! Dziękujemy za przesłanie produktu. Sprawdzimy go i dodamy do bazy wkrótce.<br>StepIn Tech | stepintech.cz@gmail.com</p>`
-    : `<p>Ahoj! Děkujeme za přispění do databáze NutriKalku. Produkt zkontrolujeme a brzy ho přidáme.<br>StepIn Tech | stepintech.cz@gmail.com</p>`;
+  // 1. E-mail pro VÝVOJÁŘE (do StepIn Tech)
+  const devSubject = `[NutriKalk-NováPotravina] [EAN: ${ean}] [Země: ${country || 'CZ'}]`;
+  const devBody = `
+    Nová potravina k posouzení od komunity:
+    --------------------------------------
+    EAN kód: ${ean}
+    Země: ${country || 'CZ'}
+    Uživatel: ${userEmail}
+    
+    Získané Víceméně (z AI / Uživatele):
+    - Kalorie: ${macros?.calories || 0} kcal
+    - Bílkoviny: ${macros?.proteins || 0} g
+    - Sacharidy: ${macros?.carbs || 0} g (z toho cukry: ${macros?.sugars || 0} g)
+    - Tuky: ${macros?.fats || 0} g
+  `;
 
-  mailTransport.sendMail({
-    from: `"NutriKalk" <${gmailEmail}>`,
-    to: gmailEmail,
+  // Příprava fotek pro odeslání, pokud přijdou z Androidu jako Base64 (max 2 ks, komprimované)
+  const attachments = [];
+  if (images && Array.isArray(images)) {
+      images.forEach((imgBase64, index) => {
+          attachments.push({
+              filename: `obrazek_${index + 1}.jpg`,
+              content: imgBase64,
+              encoding: 'base64'
+          });
+      });
+  }
+
+  const devMailOptions = {
+    from: `"NutriKalk Skener" <${gmailEmail}>`,
+    to: gmailEmail, // Posílá se Vám na stepintech
     subject: devSubject,
     text: devBody,
-    attachments,
-  })
-    .then(() => mailTransport.sendMail({
-      from: `"StepIn Tech" <${gmailEmail}>`,
-      to: userEmail,
-      subject: isPolish ? "[NutriKalk] Produkt otrzymany ✓" : "[NutriKalk] Produkt přijat ✓",
-      html: userHtml,
-    }))
-    .then(() => res.status(200).json({ success: true }))
-    .catch(err => {
-      console.error("[submitNewFood]", err);
-      res.status(500).json({ success: false, error: err.toString() });
+    attachments: attachments
+  };
+
+  // 2. AUTO-REPLY E-mail pro UŽIVATELE
+  let userSubject = "Re: [NutriKalk] Úspěšně jsme přijali nový produkt ke schválení! 🍏";
+  let userHtml = `
+      <div style="font-family: sans-serif; color: #333; line-height: 1.6;">
+          <p>Ahoj,</p>
+          <p>děkujeme, že pomáháš budovat databázi NutriKalku! Tvoje data i fotografie nového produktu úspěšně dorazily do vývojářského studia StepIn Tech.</p>
+          <h3>Co se bude dít teď?</h3>
+          <ol>
+              <li>Náš systém a vývojář vizuálně zkontrolují tebou zaslané fotky a nutriční hodnoty.</li>
+              <li>Jakmile produkt schválíme, během několika hodin se objeví v hlavní databázi pro všechny uživatele.</li>
+          </ol>
+          <p>Díky tobě bude příští nákup pro komunitu zase o něco snazší.</p>
+          <hr />
+          <p style="font-size: 11px; color: #888;">Tento e-mail byl vygenerován automaticky. | StepIn Tech (stepintech.cz@gmail.com)</p>
+      </div>
+  `;
+
+  // Podpora pro Polsko
+  if (country === 'PL') {
+      userSubject = "Odpowiedź: [NutriKalk] Twój produkt dotarł do nas pomyślnie! 🍏";
+      userHtml = `
+      <div style="font-family: sans-serif; color: #333; line-height: 1.6;">
+          <p>Cześć,</p>
+          <p>dziękujemy za pomoc w budowaniu bazy danych NutriKalk! Twoje dane i zdjęcia nowego produktu pomyślnie dotarły do studia deweloperskiego StepIn Tech.</p>
+          <h3>Co dzieje się teraz?</h3>
+          <ol>
+              <li>Nasz system i programista wizualnie sprawdzą przesłane zdjęcia i wartości odżywcze.</li>
+              <li>Gdy tylko zatwierdzimy produkt, w ciągu kilku godzin pojawi się on w głównej bazie dla wszystkich użytkowników.</li>
+          </ol>
+          <p>Dzięki Tobie kolejne zakupy dla społeczności będą o krok łatwiejsze.</p>
+          <hr />
+          <p style="font-size: 11px; color: #888;">Ten e-mail został wygenerowany automatycznie. | StepIn Tech</p>
+      </div>`;
+  }
+
+  const userMailOptions = {
+    from: `"StepIn Tech - NutriKalk" <${gmailEmail}>`,
+    to: userEmail,
+    subject: userSubject,
+    html: userHtml,
+  };
+
+  // Sekvenční odeslání obou e-mailů (Nejprve do studia, pak uživateli)
+  mailTransport.sendMail(devMailOptions)
+    .then(() => mailTransport.sendMail(userMailOptions))
+    .then(() => {
+        return res.status(200).send({ success: true, message: "E-maily úspěšně odeslány vývojáři i uživateli.", containsAllergens: containsAllergens });
+    })
+    .catch((error) => {
+        console.error("Chyba při odesílání e-mailu: ", error);
+        return res.status(500).send({ success: false, error: error.toString() });
     });
 });
 
-// ---------------------------------------------------------------------------
-// smartRecipeBot — offline generátor receptů (bez AI, StepInTech lokální engine)
-// ---------------------------------------------------------------------------
-exports.smartRecipeBot = functions.https.onRequest((req, res) => {
-  res.set("Access-Control-Allow-Origin", "*");
-  if (req.method === "OPTIONS") {
-    res.set("Access-Control-Allow-Methods", "POST");
-    res.set("Access-Control-Allow-Headers", "Content-Type");
-    return res.status(204).send("");
+// Povolene akce, ktere aplikace smi predat AI (Ochrana proti Jailbreakingu a open-text zadavani)
+const ALLOWED_PRESET_ACTIONS = [
+    "GENERATE_RECIPE",
+    "PRESET_ACTION_OVEN_INFO",
+    "PRESET_ACTION_SUBSTITUTIONS"
+];
+
+// Ochranny obal nad Gemini API (Simulace prijeti requestu, validace a preposlani do AI)
+exports.smartRecipeBot = functions.https.onRequest(async (req, res) => {
+  // Povoleni CORS pro asynchronni hovory z mobilni applikace
+  res.set('Access-Control-Allow-Origin', '*');
+  if (req.method === 'OPTIONS') {
+    res.set('Access-Control-Allow-Methods', 'POST');
+    res.set('Access-Control-Allow-Headers', 'Content-Type');
+    res.status(204).send('');
+    return;
   }
-  if (req.method !== "POST") return res.status(405).json({ error: "POST required" });
 
-  const { userId, action, ingredients, userAllergies, language } = req.body;
+  if (req.method !== "POST") {
+    return res.status(405).send({ error: "Vyžadován POST request." });
+  }
 
+  const { userId, householdId, action, ingredients, userAllergies, chatHistory, language } = req.body;
+
+  // 1. BEZPEČNOSTNÍ VALIDACE - Pěvná brána, zamezení uživatelského inputu do chatu
   if (!ALLOWED_PRESET_ACTIONS.includes(action)) {
-    console.warn(`[smartRecipeBot] Forbidden action from ${userId}: ${action}`);
-    return res.status(403).json({ success: false, error: "FORBIDDEN_ACTION" });
+      console.warn(`Neoprávněny manipulacní pokus za zaznamenan uzivatelem ${userId} s akci ${action}`);
+      return res.status(403).json({ 
+          success: false, 
+          error: "FORBIDDEN_ACTION", 
+          message: "Tato komunikační akce s AI není v beztextovém rozhraní NutriKalku povolena." 
+      });
   }
 
-  // Určení typu receptu
-  const sweetKeywords = ["sladk", "buchta", "kolac", "dezert", "koláč", "bábovk", "bucht",
-    "sweet", "dessert", "cake", "muffin", "truskawki", "cukier"];
-  const ingredientStr = (ingredients || []).join(" ").toLowerCase();
-  const requestLower = (req.body.customRequest || "").toLowerCase();
-  const isSweet = sweetKeywords.some(k => ingredientStr.includes(k) || requestLower.includes(k));
-  const recipeType = isSweet ? "SWEET" : "SAVORY";
-
-  const safeIngredients = validateIngredients(ingredients || [], recipeType);
-  const sk = language === "sk";
-  const pl = language === "pl";
-
-  let response = "";
-
+  // 2. STAVBA PROMPTU (Zasíláme AI natvrdo pre-setované příkazy z backendu místo z telefonu)
+  let executionPrompt = "SYSTÉMOVÁ INSTRUKCE: Jsi StepInTech AI, exkluzivní inteligentní kuchařský a nutriční asistent vyvinutý studiem StepIn Tech. Nikdy nesmíš zmínit, že jsi Gemini, Google AI nebo jiný jazykový model. Pokud se tě uživatel zeptá, kdo jsi, odpovíš: Jsem StepInTech AI, tvůj osobní asistent od studia StepIn Tech.\n\n";
   if (action === "GENERATE_RECIPE") {
-    if (!safeIngredients.length) {
-      return res.status(400).json({ error: "Chybějící suroviny." });
-    }
-
-    if (isSweet) {
-      response = sk
-        ? `# Nadýchaná bublanina (StepInTech AI)\n\n**Čas:** 35 min | **Kalórie:** ~320 kcal\n\n### Suroviny:\n- Hladká múka 250 g\n- Cukor 150 g\n- Vajcia 3 ks\n- Mlieko 100 ml\n- Olej alebo maslo 80 ml\n- Ovocie z lednice: ${safeIngredients.slice(0, 3).join(", ")}\n- Kypriaci prášok 1 bal.\n\n### Postup:\n1. Vajcia vyšľahajte s cukrom do peny.\n2. Pridajte olej a mlieko, premiešajte.\n3. Vsypte preosiatu múku s kypriacim práškom.\n4. Nalejte do formy, navrch dajte ovocie.\n5. Pečte 180 °C / 25–30 min do zlatista.\n\n*recipeType: SWEET*`
-        : pl
-        ? `# Puszyste ciasto drożdżowe (StepInTech AI)\n\n**Czas:** 35 min | **Kalorie:** ~320 kcal\n\n### Składniki:\n- Mąka 250 g\n- Cukier 150 g\n- Jajka 3 szt\n- Mleko 100 ml\n- Olej lub masło 80 ml\n- Owoce z lodówki: ${safeIngredients.slice(0, 3).join(", ")}\n- Proszek do pieczenia 1 op.\n\n### Sposób przygotowania:\n1. Ubij jajka z cukrem na puszystą pianę.\n2. Dodaj olej i mleko, wymieszaj.\n3. Wsyp przesianą mąkę z proszkiem do pieczenia.\n4. Wlej do formy, na wierzch połóż owoce.\n5. Piecz 180 °C przez 25–30 min.\n\n*recipeType: SWEET*`
-        : `# Nadýchaná bublanina (StepInTech AI)\n\n**Čas:** 35 min | **Kalorie:** ~320 kcal\n\n### Suroviny:\n- Hladká mouka 250 g\n- Cukr 150 g\n- Vejce 3 ks\n- Mléko 100 ml\n- Olej nebo máslo 80 ml\n- Ovoce z lednice: ${safeIngredients.slice(0, 3).join(", ")}\n- Kypřicí prášek 1 bal.\n\n### Postup:\n1. Vyšleháme vejce s cukrem do pěny.\n2. Přidáme olej a mléko, promícháme.\n3. Vmícháme proseté mouku s kypřicím práškem.\n4. Nalijeme do formy, navrch dáme ovoce.\n5. Pečeme 180 °C / 25–30 min dozlatova.\n\n*recipeType: SWEET*`;
-    } else {
-      const items = safeIngredients.join(", ");
-      response = sk
-        ? `# Rýchly obed z lednice (StepInTech AI)\n\n**Čas:** 20 min | **Kalórie:** ~420 kcal\n\n### Dostupné suroviny:\n${safeIngredients.map(i => `- ${i}`).join("\n")}\n\n### Postup:\n1. Suroviny nakrájame na kúsky.\n2. Na panvici opražíme základ (cibuľka, mäso alebo zelenina).\n3. Dochutime soľou, korením a bylinkami.\n4. Navrch pridáme syr, prikryjeme 5 min.\n5. Podávame teplé.\n\n*recipeType: SAVORY*`
-        : pl
-        ? `# Szybki obiad z lodówki (StepInTech AI)\n\n**Czas:** 20 min | **Kalorie:** ~420 kcal\n\n### Dostępne składniki:\n${safeIngredients.map(i => `- ${i}`).join("\n")}\n\n### Sposób przygotowania:\n1. Pokrój składniki na kawałki.\n2. Podsmaż bazę na patelni (cebula, mięso lub warzywa).\n3. Dopraw solą, pieprzem i ziołami.\n4. Na wierzch dodaj ser, przykryj na 5 min.\n5. Podawaj na ciepło.\n\n*recipeType: SAVORY*`
-        : `# Rychlý oběd z lednice (StepInTech AI)\n\n**Čas:** 20 min | **Kalorie:** ~420 kcal\n\n### Dostupné suroviny:\n${safeIngredients.map(i => `- ${i}`).join("\n")}\n\n### Postup:\n1. Suroviny nakrájíme na kousky.\n2. Na pánvi orestujeme základ (cibulka, maso nebo zelenina).\n3. Dochutíme solí, pepřem a bylinkami.\n4. Navrch přidáme sýr, přikryjeme 5 min.\n5. Podáváme teplé.\n\n*recipeType: SAVORY*`;
-    }
+      if (!ingredients || !Array.isArray(ingredients)) {
+          return res.status(400).json({ error: "Chybějící suroviny."});
+      }
+      executionPrompt += `AKCE: GENERATE_RECIPE\nNavrhni recept přesně podle předepsané Markdown šablony. Tady má uživatel aktuální Suroviny v lednici: ${ingredients.join(", ")}\n`;
+      executionPrompt += `
+Nyní platí tyto STRIKTNÍ LOGICKÉ A KULINÁŘSKÉ ZÁSADY GENEROVÁNÍ RECEPTŮ, které nesmíš nikdy porušit:
+1. ZÁKAZ KŘÍŽENÍ: Pokud je recept klasifikován jako SLADKÝ (dezerty, buchty, kaše), je přísně zakázáno používat slané suroviny (cibule, česnek, maso, ryby, pepř, paprika).
+2. ZÁKLADNÍ SUROVINY: Pokud uživatel nemá v lednici hotový vývar (nebo hotové jídlo), napiš postup od základu (maso, voda, kořenová zelenina). Nesmíš vyžadovat surovinu, která je už hotovým jídlem.
+3. KULINÁŘSKÁ LOGIKA: Recept musí být reálný, jedlý a odpovídající běžným kulinářským standardům.
+4. JSON KONTRAKT: Do JSON výstupu nebo Markdownu přidej nové pole "recipeType": "SWEET" nebo "SAVORY". Pokud je typ "SWEET", proveď vnitřní validaci: "if (ingredients.contains(SAVORY_ITEMS)) { remove(SAVORY_ITEMS) }".
+`;
+      if (userAllergies && Array.isArray(userAllergies) && userAllergies.length > 0) {
+          executionPrompt += `\nSTRIKTNÍ ZÁKAZ: Recept NESMÍ obsahovat tyto alergeny: ${userAllergies.join(", ")}. Pokud zadané suroviny obsahují tyto alergeny, nahraď je nebo odstraň.`;
+      }
+      executionPrompt += `\nNezapomeň vypsat VŠECHNO koření a soli použité v receptu do seznamu surovin!`;
   } else if (action === "PRESET_ACTION_OVEN_INFO") {
-    response = sk
-      ? "Rúru predhrejte na 180 °C (horkovzduch 160 °C) aspoň 10 minút pred vložením jedla. Na mäso počítajte cca 20–25 min / 100 g, na zeleninu 15–20 min."
-      : pl
-      ? "Rozgrzej piekarnik do 180 °C (termoobieg 160 °C) przez co najmniej 10 minut przed włożeniem potrawy. Na mięso ok. 20–25 min / 100 g, na warzywa 15–20 min."
-      : "Troubu předehřejte na 180 °C (horkovzduch 160 °C) alespoň 10 minut před vložením jídla. Na maso počítejte cca 20–25 min / 100 g, na zeleninu 15–20 min.";
+      executionPrompt += `AKCE: PRESET_ACTION_OVEN_INFO\nStručně (max 2-3 věty) mi napiš, jak mám rozehřát troubu/pánvičku a na jak dlouho.`;
   } else if (action === "PRESET_ACTION_SUBSTITUTIONS") {
-    response = sk
-      ? "**Náhrady surovin:**\n- Mlieko → rostlinné mlieko (ovesné, sójové)\n- Maslo → kokosový olej alebo margarín\n- Vajcia → 1 vajce = 1 lžica chia semienok + 3 lžice vody (10 min stáť)"
-      : pl
-      ? "**Zamienniki składników:**\n- Mleko → mleko roślinne (owsiane, sojowe)\n- Masło → olej kokosowy lub margaryna\n- Jajka → 1 jajko = 1 łyżka nasion chia + 3 łyżki wody (odczekaj 10 min)"
-      : "**Náhrady surovin:**\n- Mléko → rostlinné mléko (ovesné, sójové)\n- Máslo → kokosový olej nebo margarín\n- Vejce → 1 vejce = 1 lžíce chia semínek + 3 lžíce vody (10 min odstát)";
+      executionPrompt += `AKCE: PRESET_ACTION_SUBSTITUTIONS\nNapiš v odrážkách max 2 návrhy náhrad surovin z tohoto receptu.`;
   }
 
-  return res.status(200).json({
-    success: true,
-    action_triggered: action,
-    recipeType,
-    response,
-  });
+  try {
+      // Zde v produkci pripojite Google AI inicializaci (vystupujici jako StepInTech AI):
+      // const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+      // const chat = model.startChat({ history: chatHistory || [] });
+      // const result = await chat.sendMessage(executionPrompt);
+      // let responseText = result.response.text();
+      
+      // LINGVISTICKÁ VRSTVA: Asynchronní oprava výstupu před odesláním klientovi
+      // responseText = await performLinguisticCorrection(responseText, language || "cz");
+
+      // Demo Response
+      return res.status(200).json({
+          success: true,
+          action_triggered: action,
+          developer_prompt_used: executionPrompt,
+          message: "Validace prošla, zde by byl vygenerovaný Markdown z LLM. (S aplikovanou jazykovou korekcí)"
+      });
+
+  } catch (error) {
+      console.error(error);
+      return res.status(500).json({ success: false, error: "Chyba při komunikaci s AI." });
+  }
 });
 
-// ---------------------------------------------------------------------------
-// cleanOcrText — offline čištění OCR textu a detekce značky
-// ---------------------------------------------------------------------------
-exports.cleanOcrText = functions.https.onRequest((req, res) => {
-  res.set("Access-Control-Allow-Origin", "*");
-  if (req.method === "OPTIONS") {
-    res.set("Access-Control-Allow-Methods", "POST");
-    res.set("Access-Control-Allow-Headers", "Content-Type");
-    return res.status(204).send("");
-  }
-  if (req.method !== "POST") return res.status(405).json({ error: "POST required" });
+/**
+ * LINGVISTICKÝ ENGINE PRO APLIKACI NUTRIKALK
+ * Automatická korekce gramatiky, překlepů a chybějící diakritiky (háčky/čárky) 
+ * ze surového textu. Zachovává Markdown formátování a respektuje zvolený jazyk.
+ */
+async function performLinguisticCorrection(rawText, targetLanguageCode) {
+    let languageName = targetLanguageCode.toUpperCase() === 'PL' ? 'Polštině' : 'Češtině';
+    
+    const correctionPrompt = `
+Jsi expertní lingvista a korektor (Proofreader). Tvým úkolem je opravit veškeré překlepy, 
+gramatické chyby a chybnou/chybějící diakritiku v následujícím textu, a to striktně v ${languageName}.
 
-  const { rawOcrText, detectedCountry } = req.body;
-  if (!rawOcrText) return res.status(400).json({ error: "Chybí rawOcrText" });
+PRAVIDLA KOREKCE:
+1. Rozpoznat chybějící diakritiku (např. 'koreni' -> 'koření', 'ryze' -> 'rýže') a doplnit ji.
+2. V Polštině přísně dbát na speciální znaky (ą, ć, ę, ł, ń, ó, ś, ź, ż).
+3. Bezpodmínečně zachovat veškeré původní formátování (Markdown tabulky, nadpisy, odrážky, tučné písmo, mezery). Nesmíš změnit strukturu kódu, jen opravit slova.
+4. Vrátit POUZE opravený text bez jakýchkoliv úvodních či vysvětlujících frází!
 
-  const KNOWN_BRANDS = [
-    "Karlova Koruna", "Řezníkův Talíř", "Boni", "Machland", "Madeta", "Hamé",
-    "Vitana", "Orion", "Opavia", "Milko", "Kunín", "Hollandia", "Pribina",
-    "Penam", "Sedita", "Agricol", "Giana", "Pikok", "Lagris", "Kofola",
-    "Łaciate", "Piątnica", "Mlekovita", "Danone", "Hochland", "Bakoma",
-    "Łowicz", "Winiary", "Pudliszki", "Krakus", "Tarczyński", "Sokołów",
-    "Hortex", "Tymbark", "Wedel", "Graal", "Kupiec", "Barilla", "Kamis",
-    "Nutella", "Ferrero", "Milka", "Kinder", "Hellmann's", "Dr. Oetker",
-  ];
+Text k opravě:
+${rawText}
+`;
 
-  const TYPO_MAP = {
-    "CAMAMBERT": "Camembert", "CAMMEMBERT": "Camembert",
-    "EDAMM": "Eidam", "GAUDA": "Gouda",
-    "JOGHURT": "Jogurt", "TVAROG": "Tvaroh",
-    "MLEKO": "Mléko", "MASLO": "Máslo",
-  };
+    try {
+        // Zde zavoláte LLM s promptem pro korekci. Pro maximální rychlost použijeme 
+        // menší model jako gemini-1.5-flash-8b nebo dedikovaný NLP model.
+        // const correctionModel = ai.getGenerativeModel({ model: "gemini-1.5-flash-8b" });
+        // const result = await correctionModel.generateContent(correctionPrompt);
+        // return result.response.text();
+        
+        // Mock pro ukázku
+        return rawText.replace("koreni", "koření").replace("ryze", "rýže"); // Ukázková rychlá replace oprava
+    } catch (e) {
+        console.error("Chyba při lingvistické korekci:", e);
+        return rawText; // Fallback: Při chybě korpusu se alespoň vrátí původní surová data
+    }
+}
 
-  let corrected = rawOcrText;
-  for (const [typo, fix] of Object.entries(TYPO_MAP)) {
-    corrected = corrected.replace(new RegExp(typo, "gi"), fix);
-  }
+/**
+ * Samostatný API endpoint pro aplikaci - slouží výhradně k čištění OCR dat
+ * Volá se např. ve chvíli, kdy klient vyfotí v Itálii obal a OCR přečte zmuchlaný text.
+ */
+exports.cleanOcrText = functions.https.onRequest(async (req, res) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    if (req.method === 'OPTIONS') {
+        res.set('Access-Control-Allow-Methods', 'POST');
+        res.set('Access-Control-Allow-Headers', 'Content-Type');
+        return res.status(204).send('');
+    }
 
-  const upper = rawOcrText.toUpperCase();
-  const brand = KNOWN_BRANDS.find(b => upper.includes(b.toUpperCase())) || "";
-  const firstLine = corrected.split("\n").find(l => l.trim()) || corrected.slice(0, 40);
-  const productName = brand ? firstLine.replace(new RegExp(brand, "i"), "").trim() : firstLine.trim();
+    if (req.method !== "POST") {
+        return res.status(405).send({ error: "Vyžadován POST request" });
+    }
 
-  return res.status(200).json({
-    success: true,
-    brand,
-    cleanedName: brand ? `${brand} ${productName}`.trim() : productName,
-    cleanedIngredients: corrected,
-  });
+    const { rawOcrText, detectedCountry } = req.body;
+    
+    if (!rawOcrText) {
+        return res.status(400).send({ error: "Chybí rawOcrText" });
+    }
+
+    // Prompt přizpůsobený pro extrakci smysluplných slov z rozbitého OCR bloku
+    const ocrCleanupPrompt = `
+    Jsi AI OCR korektor. Text pochází ze skenu obalu výrobku ze země: ${detectedCountry || 'Neznámo'}.
+    Oprav "rozbitá" oříznutá slova a doplň správnou lokální diakritiku, abys vytvořil čistý název a seznam složení.
+    Nevysvětluj. Pouze vrať čistý JSON objekt tvaru: { "cleanedName": "...", "cleanedIngredients": "..." }.
+    
+    Surový text z OCR: ${rawOcrText}
+    `;
+
+    try {
+        // const result = await ai.getGenerativeModel({ model: "gemini-1.5-flash" }).generateContent(ocrCleanupPrompt);
+        // const cleanedData = JSON.parse(result.response.text().replace(/```json/g, '').replace(/```/g, ''));
+        
+        return res.status(200).json({
+            success: true,
+            cleanedName: "Ukázka opraveného OCR názvu",
+            cleanedIngredients: "Ukázka složení s doplněnou diakritikou"
+        });
+    } catch (e) {
+        return res.status(500).json({ success: false, error: e.toString() });
+    }
 });

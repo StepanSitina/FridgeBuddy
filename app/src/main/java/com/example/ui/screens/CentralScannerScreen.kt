@@ -684,7 +684,6 @@ fun CentralScannerScreen(
                     val scaledCalories = (nutri.calories_per_100g * scaleFactor).toInt()
                     val scaledProtein = (nutri.macronutrients.protein_g * scaleFactor)
                     val scaledCarbs = (nutri.macronutrients.carbohydrates_g * scaleFactor)
-                    val scaledSugar = (nutri.macronutrients.sugar_g * scaleFactor)
                     val scaledFat = (nutri.macronutrients.fat_g * scaleFactor)
 
                     Card(
@@ -730,10 +729,6 @@ fun CentralScannerScreen(
                                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                                     Text("Sacharidy", fontSize = 10.sp, color = CreamText.copy(alpha = 0.5f))
                                     Text(String.format(Locale.US, "%.1fg", scaledCarbs), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FreshGreenPrimary)
-                                }
-                                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-                                    Text(if (isSlovak) "z toho cukry" else "z toho cukry", fontSize = 10.sp, color = CreamText.copy(alpha = 0.5f))
-                                    Text(String.format(Locale.US, "%.1fg", scaledSugar), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = SaffronGoldSecondary)
                                 }
                                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                                     Text("Tuky", fontSize = 10.sp, color = CreamText.copy(alpha = 0.5f))

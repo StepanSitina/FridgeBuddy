@@ -1,8 +1,17 @@
 package com.example.data
 
 import android.util.Log
+import com.example.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONArray
+import org.json.JSONObject
+import java.util.concurrent.TimeUnit
+import java.util.Locale
 
 data class OcrParsedProduct(
     val brand: String,
@@ -12,6 +21,11 @@ data class OcrParsedProduct(
 
 object StepInTechAiService {
     private const val TAG = "StepInTechAiService"
+    private const val MODEL = "gemini-3.5-flash"
+    private val client = OkHttpClient.Builder()
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .build()
 
     // Highly comprehensive library of popular Czech & Slovak EAN products and brands
     val localEanDb = mapOf(
@@ -217,779 +231,131 @@ object StepInTechAiService {
         "8594001321266" to OpenFoodFactsProduct("8594001321266", "Salátová okurka hadovka 1ks", 15, 0.7, 3.6, 0.1, "Fridge"),
         "8594112233445" to OpenFoodFactsProduct("8594112233445", "Čerstvé jahody balené 500g", 32, 0.7, 7.7, 0.3, "Fridge"),
         "8594112233452" to OpenFoodFactsProduct("8594112233452", "Vanilková zmrzlina 1l (Prima)", 180, 3.2, 21.0, 9.0, "Freezer"),
-        "8594112233469" to OpenFoodFactsProduct("8594112233469", "Čokoláda na vaření 100g (Orion)", 520, 5.5, 54.0, 31.0, "Pantry"),
-
-        // =========================================================
-        // POLSKÉ PRODUKTY (PL) — Polish Products
-        // =========================================================
-
-        // Nabiał (Dairy)
-        "5900820000128" to OpenFoodFactsProduct("5900820000128", "Mleko UHT 3,2% 1l (Łaciate)", 64, 3.2, 4.7, 3.2, "Pantry"),
-        "5900820012021" to OpenFoodFactsProduct("5900820012021", "Mleko UHT 2% 1l (Łaciate)", 51, 3.3, 4.8, 2.0, "Pantry"),
-        "5901891004010" to OpenFoodFactsProduct("5901891004010", "Jogurt naturalny 400g (Danone)", 62, 4.5, 4.7, 2.5, "Fridge"),
-        "5900334004116" to OpenFoodFactsProduct("5900334004116", "Twaróg półtłusty 200g (Piątnica)", 118, 14.0, 3.2, 4.5, "Fridge"),
-        "5900520002145" to OpenFoodFactsProduct("5900520002145", "Śmietana 18% 400g (Mlekovita)", 178, 2.8, 3.5, 18.0, "Fridge"),
-        "5900334014412" to OpenFoodFactsProduct("5900334014412", "Jogurt pitny truskawkowy 250g (Piątnica)", 72, 3.2, 11.0, 1.5, "Fridge"),
-        "5901234560015" to OpenFoodFactsProduct("5901234560015", "Ser Gouda plastry 150g (Hochland)", 356, 25.0, 1.0, 28.0, "Fridge"),
-        "5901890860014" to OpenFoodFactsProduct("5901890860014", "Masło extra 82% 200g (Łaciate)", 748, 0.8, 0.7, 82.0, "Fridge"),
-        "5901060002013" to OpenFoodFactsProduct("5901060002013", "Kefir naturalny 400g (Bakoma)", 58, 3.4, 4.2, 2.3, "Fridge"),
-        "5901680001210" to OpenFoodFactsProduct("5901680001210", "Śmietana kwaśna 12% 200g (Łowicz)", 125, 2.5, 4.0, 12.0, "Fridge"),
-        "5900075022016" to OpenFoodFactsProduct("5900075022016", "Ser Camembert 120g (President)", 305, 17.0, 0.5, 26.0, "Fridge"),
-        "5900334019219" to OpenFoodFactsProduct("5900334019219", "Serek wiejski 200g (Piątnica)", 98, 10.5, 3.8, 4.2, "Fridge"),
-        "5901060013613" to OpenFoodFactsProduct("5901060013613", "Jogurt grecki 0% 150g (Bakoma)", 57, 10.0, 4.0, 0.1, "Fridge"),
-        "5905617001613" to OpenFoodFactsProduct("5905617001613", "Ser Feta w zalewie 200g (Kaserei)", 264, 14.2, 0.5, 21.3, "Fridge"),
-
-        // Mięso i wędliny (Meat & Cold Cuts)
-        "5900229005216" to OpenFoodFactsProduct("5900229005216", "Szynka konserwowa 330g (Krakus)", 145, 18.5, 1.2, 7.2, "Fridge"),
-        "5900229006015" to OpenFoodFactsProduct("5900229006015", "Kabanosy wieprzowe 250g (Tarczyński)", 462, 24.0, 1.0, 41.0, "Fridge"),
-        "5901393004012" to OpenFoodFactsProduct("5901393004012", "Kiełbasa śląska 300g (Animex)", 290, 15.0, 1.5, 26.0, "Fridge"),
-        "5900220001613" to OpenFoodFactsProduct("5900220001613", "Parówki cienkie 500g (Sokołów)", 265, 13.0, 1.0, 24.0, "Fridge"),
-        "5900714002113" to OpenFoodFactsProduct("5900714002113", "Baleron 200g (Morliny)", 168, 20.0, 0.5, 10.0, "Fridge"),
-        "5901234001232" to OpenFoodFactsProduct("5901234001232", "Mielonka wieprzowa 300g (Krakus)", 280, 15.5, 2.0, 24.0, "Pantry"),
-        "5900501000116" to OpenFoodFactsProduct("5900501000116", "Szynka drobiowa plastry 100g (Drobimex)", 88, 17.0, 1.5, 1.8, "Fridge"),
-        "5900229007111" to OpenFoodFactsProduct("5900229007111", "Konserwa mielona Krakus 300g", 264, 14.5, 1.5, 22.5, "Pantry"),
-
-        // Pieczywo (Bread & Bakery)
-        "5901088001012" to OpenFoodFactsProduct("5901088001012", "Chleb żytni razowy 500g (Biedronka)", 211, 6.5, 40.0, 1.5, "Pantry"),
-        "5901088002019" to OpenFoodFactsProduct("5901088002019", "Bułki pszenne kajzerki 6szt (piekarnia)", 285, 8.2, 55.0, 2.0, "Pantry"),
-        "5901088003016" to OpenFoodFactsProduct("5901088003016", "Chleb tostowy 500g (Bimbo)", 265, 7.8, 49.0, 3.5, "Pantry"),
-        "5901088004013" to OpenFoodFactsProduct("5901088004013", "Chleb graham 400g (Schulstad)", 218, 7.0, 41.0, 2.2, "Pantry"),
-
-        // Napoje (Beverages)
-        "5900396002018" to OpenFoodFactsProduct("5900396002018", "Woda mineralna gazowana 1,5l (Cisowianka)", 0, 0.0, 0.0, 0.0, "Pantry"),
-        "5900396004012" to OpenFoodFactsProduct("5900396004012", "Woda mineralna niegazowana 1,5l (Cisowianka)", 0, 0.0, 0.0, 0.0, "Pantry"),
-        "5900396010013" to OpenFoodFactsProduct("5900396010013", "Woda źródlana Żywiec Zdrój 1,5l", 0, 0.0, 0.0, 0.0, "Pantry"),
-        "5906087001112" to OpenFoodFactsProduct("5906087001112", "Sok jabłkowy 1l (Tymbark)", 47, 0.1, 11.0, 0.0, "Pantry"),
-        "5906087002119" to OpenFoodFactsProduct("5906087002119", "Sok pomarańczowy 1l (Tymbark)", 44, 0.7, 10.0, 0.1, "Fridge"),
-        "5901887002216" to OpenFoodFactsProduct("5901887002216", "Napój energetyczny Tiger 250ml", 45, 0.0, 10.8, 0.0, "Pantry"),
-        "5900396008010" to OpenFoodFactsProduct("5900396008010", "Herbata czarna ekspresowa 100szt (Lipton)", 2, 0.1, 0.2, 0.0, "Pantry"),
-        "5901067001014" to OpenFoodFactsProduct("5901067001014", "Kawa mielona 250g (Jacobs Kronung)", 0, 0.0, 0.0, 0.0, "Pantry"),
-        "5900358001213" to OpenFoodFactsProduct("5900358001213", "Piwo Tyskie jasne pełne 500ml", 43, 0.4, 4.5, 0.0, "Pantry"),
-        "5900358002210" to OpenFoodFactsProduct("5900358002210", "Piwo Żywiec 500ml (Żywiec)", 42, 0.4, 4.0, 0.0, "Pantry"),
-        "5900358003217" to OpenFoodFactsProduct("5900358003217", "Piwo Lech Premium 500ml (Lech)", 41, 0.4, 4.2, 0.0, "Pantry"),
-
-        // Słodycze (Sweets & Snacks)
-        "5900011001014" to OpenFoodFactsProduct("5900011001014", "Czekolada mleczna 100g (Wedel)", 535, 7.2, 58.0, 30.0, "Pantry"),
-        "5900011002011" to OpenFoodFactsProduct("5900011002011", "Ptasie mleczko waniliowe 380g (Wedel)", 400, 4.0, 65.0, 14.0, "Pantry"),
-        "5900011003018" to OpenFoodFactsProduct("5900011003018", "Delicje Szampańskie 175g (Wedel)", 358, 5.5, 62.0, 10.5, "Pantry"),
-        "5900093001018" to OpenFoodFactsProduct("5900093001018", "Ciastka Petit Beurre 200g (LU)", 448, 7.0, 70.0, 15.0, "Pantry"),
-        "5901188002013" to OpenFoodFactsProduct("5901188002013", "Wafelki Prince Polo 50g (Kraft)", 527, 7.0, 56.0, 29.5, "Pantry"),
-        "5906792001013" to OpenFoodFactsProduct("5906792001013", "Cukierki Krowka 400g (Krówka)", 415, 5.2, 72.0, 12.0, "Pantry"),
-        "5900259001010" to OpenFoodFactsProduct("5900259001010", "Chipsy ziemniaczane 140g (Lay's solone)", 536, 7.0, 55.0, 32.0, "Pantry"),
-        "5900259002017" to OpenFoodFactsProduct("5900259002017", "Chipsy paprykowe 140g (Lay's papryka)", 528, 6.8, 53.5, 32.0, "Pantry"),
-
-        // Produkty suche / sypkie (Dry goods)
-        "5900084001018" to OpenFoodFactsProduct("5900084001018", "Mąka pszenna typ 450 1kg (Szymanowska)", 339, 10.5, 72.0, 1.0, "Pantry"),
-        "5900084002015" to OpenFoodFactsProduct("5900084002015", "Kasza gryczana 400g (Kupiec)", 343, 12.6, 65.3, 3.1, "Pantry"),
-        "5900084003012" to OpenFoodFactsProduct("5900084003012", "Ryż długoziarnisty 1kg (Kupiec)", 360, 7.0, 78.0, 0.6, "Pantry"),
-        "5901592003010" to OpenFoodFactsProduct("5901592003010", "Makaron spaghetti 500g (Barilla)", 350, 12.5, 71.0, 1.5, "Pantry"),
-        "5901592004017" to OpenFoodFactsProduct("5901592004017", "Makaron penne 500g (Barilla)", 350, 12.5, 71.0, 1.5, "Pantry"),
-        "5900095001013" to OpenFoodFactsProduct("5900095001013", "Cukier kryształ 1kg (Diamant)", 400, 0.0, 100.0, 0.0, "Pantry"),
-        "5900095002010" to OpenFoodFactsProduct("5900095002010", "Sól warzona jodowana 1kg (Kłodawska)", 0, 0.0, 0.0, 0.0, "Pantry"),
-        "5900015001015" to OpenFoodFactsProduct("5900015001015", "Olej rzepakowy 1l (Kujawski)", 900, 0.0, 0.0, 100.0, "Pantry"),
-        "5900188001013" to OpenFoodFactsProduct("5900188001013", "Oliwa z oliwek extra virgin 500ml (Monini)", 824, 0.0, 0.0, 91.6, "Pantry"),
-        "5901520002011" to OpenFoodFactsProduct("5901520002011", "Płatki owsiane górskie 500g (Góralki)", 362, 12.5, 59.0, 7.0, "Pantry"),
-        "5900066002011" to OpenFoodFactsProduct("5900066002011", "Bułka tarta 400g (Melvit)", 355, 10.5, 69.0, 2.5, "Pantry"),
-
-        // Warzywa i owoce (Vegetables & Fruits)
-        "5900112001015" to OpenFoodFactsProduct("5900112001015", "Pomidory koktajlowe 500g (Biedronka)", 20, 0.9, 3.9, 0.2, "Fridge"),
-        "5900112002012" to OpenFoodFactsProduct("5900112002012", "Ogórek szklarniowy 1szt", 15, 0.7, 3.0, 0.1, "Fridge"),
-        "5900112003019" to OpenFoodFactsProduct("5900112003019", "Papryka czerwona 500g", 31, 1.0, 6.0, 0.3, "Fridge"),
-        "5900112004016" to OpenFoodFactsProduct("5900112004016", "Ziemniaki 2kg (siatka)", 77, 2.0, 17.0, 0.1, "Pantry"),
-        "5900112005013" to OpenFoodFactsProduct("5900112005013", "Marchew 1kg (siatka)", 41, 0.9, 9.6, 0.2, "Pantry"),
-        "5900112006010" to OpenFoodFactsProduct("5900112006010", "Cebula żółta 1kg (siatka)", 40, 1.1, 9.3, 0.1, "Pantry"),
-        "5900112007017" to OpenFoodFactsProduct("5900112007017", "Jabłka Jonagold 1kg", 52, 0.3, 13.0, 0.2, "Fridge"),
-        "5900112008014" to OpenFoodFactsProduct("5900112008014", "Banany 1kg", 89, 1.1, 22.8, 0.3, "Pantry"),
-
-        // Przetwory / Konserwy (Preserved / Canned)
-        "5900231001012" to OpenFoodFactsProduct("5900231001012", "Tuńczyk w oleju 185g (Graal)", 212, 22.0, 0.0, 14.0, "Pantry"),
-        "5900231002019" to OpenFoodFactsProduct("5900231002019", "Szprot w pomidorach 175g (Graal)", 156, 14.0, 5.0, 8.5, "Pantry"),
-        "5900231003016" to OpenFoodFactsProduct("5900231003016", "Makrela wędzona 170g (Graal)", 220, 20.0, 0.5, 15.5, "Pantry"),
-        "5901650001010" to OpenFoodFactsProduct("5901650001010", "Fasola biała w zalewie 400g (Bonduelle)", 87, 5.4, 13.4, 0.6, "Pantry"),
-        "5901650002017" to OpenFoodFactsProduct("5901650002017", "Kukurydza konserwowa 340g (Bonduelle)", 86, 2.9, 18.0, 1.2, "Pantry"),
-        "5901650003014" to OpenFoodFactsProduct("5901650003014", "Groszek zielony 400g (Bonduelle)", 75, 5.0, 12.0, 0.5, "Pantry"),
-        "5903268001017" to OpenFoodFactsProduct("5903268001017", "Koncentrat pomidorowy 30% 190g (Pudliszki)", 96, 4.5, 15.0, 0.5, "Pantry"),
-        "5903268002014" to OpenFoodFactsProduct("5903268002014", "Dżem truskawkowy 280g (Łowicz)", 240, 0.5, 58.5, 0.1, "Pantry"),
-        "5903268003011" to OpenFoodFactsProduct("5903268003011", "Ogórki kiszone 900g (Krakus)", 12, 0.6, 1.8, 0.2, "Pantry"),
-
-        // Mrożonki (Frozen)
-        "5900820020017" to OpenFoodFactsProduct("5900820020017", "Mieszanka warzywna mrożona 1kg (Hortex)", 55, 3.5, 9.0, 0.5, "Freezer"),
-        "5900820021014" to OpenFoodFactsProduct("5900820021014", "Szpinak liściowy mrożony 450g (Hortex)", 28, 2.8, 2.0, 0.8, "Freezer"),
-        "5900820022011" to OpenFoodFactsProduct("5900820022011", "Frytki mrożone 1kg (McCain)", 145, 2.3, 22.0, 5.0, "Freezer"),
-        "5900820023018" to OpenFoodFactsProduct("5900820023018", "Pizza mrożona Margherita 320g (Dr. Oetker)", 245, 9.5, 24.0, 11.0, "Freezer"),
-        "5900820024015" to OpenFoodFactsProduct("5900820024015", "Paluszki rybne mrożone 400g (Findus)", 205, 13.0, 19.0, 8.0, "Freezer"),
-
-        // Sosy i przyprawy (Sauces & Seasonings)
-        "5901010001018" to OpenFoodFactsProduct("5901010001018", "Majonez 400g (Hellmann's)", 645, 0.6, 1.5, 71.0, "Fridge"),
-        "5901010002015" to OpenFoodFactsProduct("5901010002015", "Musztarda sarepska 180g (Kamis)", 100, 4.8, 5.6, 6.0, "Fridge"),
-        "5901010003012" to OpenFoodFactsProduct("5901010003012", "Ketchup 450g (Pudliszki)", 90, 1.5, 20.0, 0.1, "Fridge"),
-        "5901010004019" to OpenFoodFactsProduct("5901010004019", "Sos sojowy 150ml (Kikkoman)", 60, 10.0, 8.0, 0.0, "Pantry"),
-        "5901010005016" to OpenFoodFactsProduct("5901010005016", "Ocet jabłkowy 500ml (Melvit)", 14, 0.0, 3.0, 0.0, "Pantry"),
-
-        // Jaja i produkty jajeczne (Eggs)
-        "5900888001019" to OpenFoodFactsProduct("5900888001019", "Jaja kurze klasa M 10szt (wolny wybieg)", 143, 12.5, 0.7, 9.9, "Fridge"),
-        "5900888002016" to OpenFoodFactsProduct("5900888002016", "Jaja kurze klasa L 6szt (Biedronka)", 143, 12.5, 0.7, 9.9, "Fridge"),
-
-        // Inne popularne polskie produkty
-        "5900276001011" to OpenFoodFactsProduct("5900276001011", "Bigos domowy 700g (Pudliszki)", 98, 5.5, 9.0, 5.0, "Pantry"),
-        "5900276002018" to OpenFoodFactsProduct("5900276002018", "Zupa pomidorowa z ryżem 450g (Profi)", 88, 2.0, 15.0, 2.5, "Fridge"),
-        "5900399001013" to OpenFoodFactsProduct("5900399001013", "Płatki kukurydziane 500g (Nestle)", 376, 7.5, 84.0, 0.8, "Pantry"),
-        "5900399002010" to OpenFoodFactsProduct("5900399002010", "Musli z owocami 500g (Emco)", 380, 8.0, 67.0, 7.0, "Pantry"),
-        "5907813001018" to OpenFoodFactsProduct("5907813001018", "Chleb wiejski swojski 500g (Społem)", 240, 7.5, 45.0, 1.8, "Pantry"),
-        "5905617002017" to OpenFoodFactsProduct("5905617002017", "Ser żółty Gouda 250g (Zott)", 360, 24.5, 0.5, 29.0, "Fridge"),
-        "5906396001010" to OpenFoodFactsProduct("5906396001010", "Żurek staropolski w słoiku 500g (Winiary)", 35, 1.5, 6.0, 0.5, "Pantry"),
-        "5906396002017" to OpenFoodFactsProduct("5906396002017", "Barszcz czerwony 500g (Winiary)", 28, 1.0, 5.5, 0.3, "Pantry"),
-
-        // =========================================================
-        // COCA-COLA & VŠECHNY KOLOVÉ NÁPOJE (CZ/SK/PL/EU)
-        // =========================================================
-
-        // Coca-Cola Classic
-        "5449000000996" to OpenFoodFactsProduct("5449000000996", "Coca-Cola Classic 330ml plech", 42, 0.0, 10.6, 0.0, "Pantry"),
-        "5449000004031" to OpenFoodFactsProduct("5449000004031", "Coca-Cola Classic 500ml láhev PET", 42, 0.0, 10.6, 0.0, "Pantry"),
-        "5449000054227" to OpenFoodFactsProduct("5449000054227", "Coca-Cola Classic 1,5l PET", 42, 0.0, 10.6, 0.0, "Pantry"),
-        "5449000054234" to OpenFoodFactsProduct("5449000054234", "Coca-Cola Classic 2l PET", 42, 0.0, 10.6, 0.0, "Pantry"),
-        "5449000063779" to OpenFoodFactsProduct("5449000063779", "Coca-Cola Classic 250ml plech slim", 42, 0.0, 10.6, 0.0, "Pantry"),
-
-        // Coca-Cola Zero Sugar
-        "5449000133328" to OpenFoodFactsProduct("5449000133328", "Coca-Cola Zero Sugar 330ml plech", 0, 0.0, 0.0, 0.0, "Pantry"),
-        "5449000139382" to OpenFoodFactsProduct("5449000139382", "Coca-Cola Zero Sugar 500ml PET", 0, 0.0, 0.0, 0.0, "Pantry"),
-        "5449000139399" to OpenFoodFactsProduct("5449000139399", "Coca-Cola Zero Sugar 1,5l PET", 0, 0.0, 0.0, 0.0, "Pantry"),
-        "5449000210029" to OpenFoodFactsProduct("5449000210029", "Coca-Cola Zero Sugar 2l PET", 0, 0.0, 0.0, 0.0, "Pantry"),
-
-        // Coca-Cola Light / Diet
-        "5449000012838" to OpenFoodFactsProduct("5449000012838", "Coca-Cola Light 330ml plech", 1, 0.0, 0.1, 0.0, "Pantry"),
-        "5449000047960" to OpenFoodFactsProduct("5449000047960", "Coca-Cola Light 500ml PET", 1, 0.0, 0.1, 0.0, "Pantry"),
-        "5449000047977" to OpenFoodFactsProduct("5449000047977", "Coca-Cola Light 1,5l PET", 1, 0.0, 0.1, 0.0, "Pantry"),
-
-        // Coca-Cola Příchutě / Flavours
-        "5449000261250" to OpenFoodFactsProduct("5449000261250", "Coca-Cola Cherry 330ml plech", 40, 0.0, 10.0, 0.0, "Pantry"),
-        "5449000285225" to OpenFoodFactsProduct("5449000285225", "Coca-Cola Vanilla 330ml plech", 43, 0.0, 10.7, 0.0, "Pantry"),
-        "5449000285232" to OpenFoodFactsProduct("5449000285232", "Coca-Cola Peach 330ml plech", 39, 0.0, 9.8, 0.0, "Pantry"),
-        "5449000314291" to OpenFoodFactsProduct("5449000314291", "Coca-Cola Lemon 330ml plech", 38, 0.0, 9.5, 0.0, "Pantry"),
-        "5449000314307" to OpenFoodFactsProduct("5449000314307", "Coca-Cola Orange Zero 330ml plech", 0, 0.0, 0.1, 0.0, "Pantry"),
-
-        // Freeway Cola (Lidl)
-        "20724718" to OpenFoodFactsProduct("20724718", "Freeway Cola Classic 1,5l (Lidl)", 43, 0.0, 10.8, 0.0, "Pantry"),
-        "4056489099024" to OpenFoodFactsProduct("4056489099024", "Freeway Cola Classic 330ml plech (Lidl)", 43, 0.0, 10.8, 0.0, "Pantry"),
-        "4056489099031" to OpenFoodFactsProduct("4056489099031", "Freeway Cola Zero 330ml plech (Lidl)", 0, 0.0, 0.1, 0.0, "Pantry"),
-        "4056489108344" to OpenFoodFactsProduct("4056489108344", "Freeway Cola Zero 1,5l PET (Lidl)", 0, 0.0, 0.1, 0.0, "Pantry"),
-        "4056489108351" to OpenFoodFactsProduct("4056489108351", "Freeway Energy Classic 250ml plech (Lidl)", 46, 0.0, 11.3, 0.0, "Pantry"),
-        "4056489108368" to OpenFoodFactsProduct("4056489108368", "Freeway Orange 1,5l PET (Lidl)", 38, 0.0, 9.5, 0.0, "Pantry"),
-        "4056489108375" to OpenFoodFactsProduct("4056489108375", "Freeway Lemon 1,5l PET (Lidl)", 36, 0.0, 9.0, 0.0, "Pantry"),
-        "4056489108382" to OpenFoodFactsProduct("4056489108382", "Freeway Tonic Water 1l (Lidl)", 28, 0.0, 7.0, 0.0, "Pantry"),
-        "4056489108399" to OpenFoodFactsProduct("4056489108399", "Freeway Bitter Lemon 1l (Lidl)", 30, 0.0, 7.5, 0.0, "Pantry"),
-        "4056489108405" to OpenFoodFactsProduct("4056489108405", "Freeway Ginger Beer 1l (Lidl)", 32, 0.0, 8.0, 0.0, "Pantry"),
-
-        // Royal Crown (RC Cola)
-        "0041800162498" to OpenFoodFactsProduct("0041800162498", "RC Cola Classic 355ml plech (Royal Crown)", 43, 0.0, 10.8, 0.0, "Pantry"),
-        "0041800185336" to OpenFoodFactsProduct("0041800185336", "RC Cola Diet 355ml plech (Royal Crown)", 0, 0.0, 0.0, 0.0, "Pantry"),
-        "8585001630012" to OpenFoodFactsProduct("8585001630012", "Royal Crown Cola 1,5l PET (CZ/SK)", 43, 0.0, 10.8, 0.0, "Pantry"),
-        "8585001630029" to OpenFoodFactsProduct("8585001630029", "Royal Crown Cola Zero 1,5l PET (CZ/SK)", 0, 0.0, 0.1, 0.0, "Pantry"),
-
-        // Pepsi
-        "4060800100734" to OpenFoodFactsProduct("4060800100734", "Pepsi Cola Classic 330ml plech", 42, 0.0, 11.0, 0.0, "Pantry"),
-        "4060800100741" to OpenFoodFactsProduct("4060800100741", "Pepsi Cola Classic 500ml PET", 42, 0.0, 11.0, 0.0, "Pantry"),
-        "4060800100758" to OpenFoodFactsProduct("4060800100758", "Pepsi Cola Classic 1,5l PET", 42, 0.0, 11.0, 0.0, "Pantry"),
-        "4060800100765" to OpenFoodFactsProduct("4060800100765", "Pepsi Max (Zero) 330ml plech", 0, 0.0, 0.0, 0.0, "Pantry"),
-        "4060800100772" to OpenFoodFactsProduct("4060800100772", "Pepsi Max (Zero) 1,5l PET", 0, 0.0, 0.0, 0.0, "Pantry"),
-        "4060800100789" to OpenFoodFactsProduct("4060800100789", "Pepsi Twist (Lemon) 330ml plech", 38, 0.0, 9.5, 0.0, "Pantry"),
-        "8593865001013" to OpenFoodFactsProduct("8593865001013", "Pepsi 2l PET (CZ)", 42, 0.0, 11.0, 0.0, "Pantry"),
-
-        // Kofola (CZ/SK)
-        "8594185780013" to OpenFoodFactsProduct("8594185780013", "Kofola Originál 1,5l PET", 32, 0.0, 8.0, 0.0, "Pantry"),
-        "8594185780020" to OpenFoodFactsProduct("8594185780020", "Kofola Originál 330ml plech", 32, 0.0, 8.0, 0.0, "Pantry"),
-        "8594185780037" to OpenFoodFactsProduct("8594185780037", "Kofola Bez cukru 1,5l PET", 2, 0.0, 0.4, 0.0, "Pantry"),
-        "8594185780044" to OpenFoodFactsProduct("8594185780044", "Kofola Citrus 1,5l PET", 34, 0.0, 8.5, 0.0, "Pantry"),
-        "8594185780051" to OpenFoodFactsProduct("8594185780051", "Kofola Višeň 1,5l PET", 33, 0.0, 8.2, 0.0, "Pantry"),
-
-        // Sprite, Fanta, Dr Pepper
-        "5449000054203" to OpenFoodFactsProduct("5449000054203", "Sprite 330ml plech", 26, 0.0, 6.6, 0.0, "Pantry"),
-        "5449000054210" to OpenFoodFactsProduct("5449000054210", "Sprite 1,5l PET", 26, 0.0, 6.6, 0.0, "Pantry"),
-        "5449000054241" to OpenFoodFactsProduct("5449000054241", "Fanta Pomeranč 330ml plech", 45, 0.0, 11.2, 0.0, "Pantry"),
-        "5449000054258" to OpenFoodFactsProduct("5449000054258", "Fanta Pomeranč 1,5l PET", 45, 0.0, 11.2, 0.0, "Pantry"),
-        "5449000054265" to OpenFoodFactsProduct("5449000054265", "Fanta Citron 330ml plech", 38, 0.0, 9.5, 0.0, "Pantry"),
-        "5449000054272" to OpenFoodFactsProduct("5449000054272", "Fanta Jahoda 330ml plech", 44, 0.0, 11.0, 0.0, "Pantry"),
-        "0078000001492" to OpenFoodFactsProduct("0078000001492", "Dr Pepper 330ml plech", 42, 0.0, 10.6, 0.0, "Pantry"),
-
-        // =========================================================
-        // TONICY, SODOVKY & BARMÁNSKÉ MIXERY
-        // =========================================================
-
-        "5000327000008" to OpenFoodFactsProduct("5000327000008", "Schweppes Tonic Water 330ml plech", 25, 0.0, 6.5, 0.0, "Pantry"),
-        "5000327011005" to OpenFoodFactsProduct("5000327011005", "Schweppes Tonic Water 1l PET", 25, 0.0, 6.5, 0.0, "Pantry"),
-        "5000327014006" to OpenFoodFactsProduct("5000327014006", "Schweppes Bitter Lemon 330ml", 38, 0.0, 9.5, 0.0, "Pantry"),
-        "5000327017007" to OpenFoodFactsProduct("5000327017007", "Schweppes Ginger Ale 330ml", 34, 0.0, 8.5, 0.0, "Pantry"),
-        "5000327020007" to OpenFoodFactsProduct("5000327020007", "Schweppes Agrum 330ml", 36, 0.0, 9.0, 0.0, "Pantry"),
-        "5000327023008" to OpenFoodFactsProduct("5000327023008", "Fever-Tree Premium Indian Tonic 200ml", 38, 0.0, 9.5, 0.0, "Pantry"),
-        "5060108450018" to OpenFoodFactsProduct("5060108450018", "Fever-Tree Ginger Beer 200ml", 32, 0.0, 8.0, 0.0, "Pantry"),
-        "8594008125220" to OpenFoodFactsProduct("8594008125220", "Mattoni Neperlivá voda 1,5l (Mattoni)", 0, 0.0, 0.0, 0.0, "Pantry"),
-        "8594008125237" to OpenFoodFactsProduct("8594008125237", "Mattoni Perlivá voda 1,5l (Mattoni)", 0, 0.0, 0.0, 0.0, "Pantry"),
-        "8594008125244" to OpenFoodFactsProduct("8594008125244", "Magnesia Perlivá voda 1,5l", 0, 0.0, 0.0, 0.0, "Pantry"),
-        "8584004800012" to OpenFoodFactsProduct("8584004800012", "Sodová voda siphon 1l (Rapp)", 0, 0.0, 0.0, 0.0, "Pantry"),
-
-        // =========================================================
-        // LIHOVINY & ALKOHOL PRO KOKTEJLY
-        // =========================================================
-
-        // Rum
-        "8594005021560" to OpenFoodFactsProduct("8594005021560", "Božkov Republica Exclusive rum 38% 0,7l", 230, 0.0, 3.0, 0.0, "Pantry"),
-        "5000281001443" to OpenFoodFactsProduct("5000281001443", "Bacardi Carta Blanca White Rum 37,5% 0,7l", 220, 0.0, 0.1, 0.0, "Pantry"),
-        "5000281009098" to OpenFoodFactsProduct("5000281009098", "Bacardi Spiced Rum 35% 0,7l", 215, 0.0, 2.0, 0.0, "Pantry"),
-        "5000289021417" to OpenFoodFactsProduct("5000289021417", "Captain Morgan Dark Rum 40% 0,7l", 220, 0.0, 3.0, 0.0, "Pantry"),
-        "5000289102417" to OpenFoodFactsProduct("5000289102417", "Havana Club 3 anos rum 40% 0,7l", 225, 0.0, 0.1, 0.0, "Pantry"),
-        "5021349000034" to OpenFoodFactsProduct("5021349000034", "Appleton Estate Signature Rum 40% 0,7l", 230, 0.0, 0.0, 0.0, "Pantry"),
-
-        // Gin
-        "5010316800108" to OpenFoodFactsProduct("5010316800108", "Gordon's London Dry Gin 37,5% 0,7l", 222, 0.0, 0.1, 0.0, "Pantry"),
-        "5010316803109" to OpenFoodFactsProduct("5010316803109", "Tanqueray London Dry Gin 43,1% 0,7l", 240, 0.0, 0.1, 0.0, "Pantry"),
-        "5060112770013" to OpenFoodFactsProduct("5060112770013", "Hendrick's Gin 41,4% 0,7l", 245, 0.0, 0.1, 0.0, "Pantry"),
-        "5010291901900" to OpenFoodFactsProduct("5010291901900", "Bombay Sapphire Gin 40% 0,7l", 240, 0.0, 0.1, 0.0, "Pantry"),
-        "5010285022220" to OpenFoodFactsProduct("5010285022220", "Beefeater London Dry Gin 40% 0,7l", 235, 0.0, 0.1, 0.0, "Pantry"),
-        "8594193900018" to OpenFoodFactsProduct("8594193900018", "Žufánek Negroni Gin 45% 0,5l (CZ)", 240, 0.0, 0.1, 0.0, "Pantry"),
-
-        // Vodka
-        "7312040017089" to OpenFoodFactsProduct("7312040017089", "Absolut Vodka 40% 0,7l", 222, 0.0, 0.1, 0.0, "Pantry"),
-        "5000281039518" to OpenFoodFactsProduct("5000281039518", "Smirnoff Red Vodka 37,5% 0,7l", 215, 0.0, 0.1, 0.0, "Pantry"),
-        "7350057900060" to OpenFoodFactsProduct("7350057900060", "Absolut Citron Vodka 40% 0,7l", 222, 0.0, 0.1, 0.0, "Pantry"),
-        "0082000701016" to OpenFoodFactsProduct("0082000701016", "Stolichnaya Premium Vodka 40% 0,7l", 222, 0.0, 0.1, 0.0, "Pantry"),
-        "8594005021614" to OpenFoodFactsProduct("8594005021614", "Sobieski Vodka 40% 0,7l (Polska)", 220, 0.0, 0.1, 0.0, "Pantry"),
-
-        // Whisky / Bourbon
-        "5010196101317" to OpenFoodFactsProduct("5010196101317", "Jack Daniel's Tennessee Whiskey 40% 0,7l", 231, 0.0, 0.0, 0.0, "Pantry"),
-        "5013967001855" to OpenFoodFactsProduct("5013967001855", "Jameson Irish Whiskey 40% 0,7l", 228, 0.0, 0.0, 0.0, "Pantry"),
-        "5013967018013" to OpenFoodFactsProduct("5013967018013", "Johnnie Walker Red Label 40% 0,7l", 230, 0.0, 0.0, 0.0, "Pantry"),
-        "7610201022419" to OpenFoodFactsProduct("7610201022419", "Jim Beam Bourbon Whiskey 40% 0,7l", 228, 0.0, 0.0, 0.0, "Pantry"),
-        "5010494021512" to OpenFoodFactsProduct("5010494021512", "Glenfiddich Single Malt 12y 40% 0,7l", 245, 0.0, 0.0, 0.0, "Pantry"),
-        "0081753800007" to OpenFoodFactsProduct("0081753800007", "Maker's Mark Bourbon 45% 0,7l", 240, 0.0, 0.0, 0.0, "Pantry"),
-
-        // Tequila / Mezcal
-        "7501005101030" to OpenFoodFactsProduct("7501005101030", "Jose Cuervo Especial Gold Tequila 38% 0,7l", 220, 0.0, 0.0, 0.0, "Pantry"),
-        "7501005900236" to OpenFoodFactsProduct("7501005900236", "Jose Cuervo Silver Tequila 38% 0,7l", 218, 0.0, 0.0, 0.0, "Pantry"),
-        "7501464100013" to OpenFoodFactsProduct("7501464100013", "Sierra Tequila Silver 38% 0,7l", 215, 0.0, 0.0, 0.0, "Pantry"),
-        "7503019411034" to OpenFoodFactsProduct("7503019411034", "Olmeca Tequila Blanco 38% 0,7l", 218, 0.0, 0.0, 0.0, "Pantry"),
-
-        // Likéry / Liqueurs
-        "5000159000179" to OpenFoodFactsProduct("5000159000179", "Cointreau Triple Sec likér 40% 0,7l", 310, 0.0, 28.0, 0.0, "Pantry"),
-        "3035550004127" to OpenFoodFactsProduct("3035550004127", "Grand Marnier Cordon Rouge 40% 0,7l", 320, 0.0, 30.0, 0.0, "Pantry"),
-        "5000281003775" to OpenFoodFactsProduct("5000281003775", "Malibu Coconut Rum Likér 21% 0,7l", 210, 0.0, 22.0, 0.0, "Pantry"),
-        "8004006010018" to OpenFoodFactsProduct("8004006010018", "Aperol Aperitivo 11% 0,7l (Campari)", 98, 0.0, 15.0, 0.0, "Pantry"),
-        "8000856000000" to OpenFoodFactsProduct("8000856000000", "Campari Bitter Aperitivo 25% 0,7l", 250, 0.0, 28.0, 0.0, "Pantry"),
-        "8003629000169" to OpenFoodFactsProduct("8003629000169", "Martini Bianco Vermouth 15% 0,75l", 128, 0.0, 15.0, 0.0, "Pantry"),
-        "8003629000138" to OpenFoodFactsProduct("8003629000138", "Martini Rosso Vermouth 15% 0,75l", 125, 0.0, 15.0, 0.0, "Pantry"),
-        "8003629000145" to OpenFoodFactsProduct("8003629000145", "Martini Extra Dry Vermouth 15% 0,75l", 108, 0.0, 5.0, 0.0, "Pantry"),
-        "8697405112032" to OpenFoodFactsProduct("8697405112032", "Baileys Original Irish Cream 17% 0,7l", 327, 3.8, 25.2, 13.4, "Pantry"),
-        "3014260000029" to OpenFoodFactsProduct("3014260000029", "Amaretto Disaronno Originale 28% 0,7l", 292, 0.0, 34.0, 0.0, "Pantry"),
-        "3035540003418" to OpenFoodFactsProduct("3035540003418", "Kahlúa Coffee Liqueur 16% 0,7l", 305, 0.0, 42.0, 0.0, "Pantry"),
-        "8594005021522" to OpenFoodFactsProduct("8594005021522", "Becherovka Original 38% 0,7l (CZ)", 248, 0.0, 12.0, 0.0, "Pantry"),
-        "8590570001018" to OpenFoodFactsProduct("8590570001018", "Fernet Stock 38% 0,7l (CZ)", 235, 0.0, 10.0, 0.0, "Pantry"),
-        "8594005021539" to OpenFoodFactsProduct("8594005021539", "Slivovice Jelínek 50% 0,7l (CZ)", 245, 0.0, 0.0, 0.0, "Pantry"),
-        "8586000211241" to OpenFoodFactsProduct("8586000211241", "Spišská Borovička 45% 0,7l (SK)", 222, 0.0, 0.0, 0.0, "Pantry"),
-        "8588003612022" to OpenFoodFactsProduct("8588003612022", "Tatratea Citrus 32% 0,7l (SK)", 280, 0.0, 14.0, 0.0, "Pantry"),
-        "8000070011021" to OpenFoodFactsProduct("8000070011021", "Limoncello di Capri 30% 0,7l", 280, 0.0, 32.0, 0.0, "Pantry"),
-        "3175080013019" to OpenFoodFactsProduct("3175080013019", "Chartreuse Verte 55% 0,7l", 350, 0.0, 24.0, 0.0, "Pantry"),
-        "4006754000244" to OpenFoodFactsProduct("4006754000244", "Jägermeister 35% 1l (Germany)", 250, 0.0, 14.0, 0.0, "Pantry"),
-        "4001560015015" to OpenFoodFactsProduct("4001560015015", "Sambuca Molinari Extra 42% 0,7l", 285, 0.0, 32.0, 0.0, "Pantry"),
-        "8001903036507" to OpenFoodFactsProduct("8001903036507", "Grappa Julia Nonino 38% 0,7l", 230, 0.0, 0.0, 0.0, "Pantry"),
-
-        // Víno a Prosecco / Wine & Sparkling
-        "8001222003022" to OpenFoodFactsProduct("8001222003022", "Prosecco Treviso DOC Brut 11% 0,75l (Zonin)", 68, 0.1, 3.5, 0.0, "Pantry"),
-        "3399000000048" to OpenFoodFactsProduct("3399000000048", "Moët & Chandon Brut Impérial 12% 0,75l", 85, 0.3, 7.0, 0.0, "Pantry"),
-        "8594005211930" to OpenFoodFactsProduct("8594005211930", "Bohemia Sekt Brut Klasik 11,5% 0,75l (CZ)", 72, 0.1, 5.0, 0.0, "Pantry"),
-        "8594005211947" to OpenFoodFactsProduct("8594005211947", "Cava Brut Reserva 11,5% 0,75l (Codorniu)", 74, 0.1, 4.5, 0.0, "Pantry"),
-        "5010267701019" to OpenFoodFactsProduct("5010267701019", "Pimm's No. 1 Cup 25% 0,7l", 248, 0.0, 25.0, 0.0, "Pantry"),
-        "8007056204514" to OpenFoodFactsProduct("8007056204514", "Aperol Spritz Ready to Drink 8% 0,2l plech", 65, 0.0, 7.8, 0.0, "Pantry"),
-        "5029449001615" to OpenFoodFactsProduct("5029449001615", "Midori Melon Liqueur 20% 0,7l", 260, 0.0, 30.0, 0.0, "Pantry"),
-
-        // Pivo / Beer (CZ/SK)
-        "8594022300018" to OpenFoodFactsProduct("8594022300018", "Kozel Světlý Ležák 10° plech 0,5l", 40, 0.4, 4.0, 0.0, "Pantry"),
-        "8594022300025" to OpenFoodFactsProduct("8594022300025", "Kozel Černý Ležák 11° plech 0,5l", 48, 0.5, 5.0, 0.0, "Pantry"),
-        "8593877123129" to OpenFoodFactsProduct("8593877123129", "Pilsner Urquell 0,33l plech", 40, 0.4, 3.8, 0.0, "Pantry"),
-        "8594005111124" to OpenFoodFactsProduct("8594005111124", "Budvar Tmavý ležák 10° 0,5l plech", 48, 0.5, 5.2, 0.0, "Pantry"),
-        "8594001131220" to OpenFoodFactsProduct("8594001131220", "Gambrinus Světlé 10° 0,5l plech", 39, 0.4, 3.9, 0.0, "Pantry"),
-        "8594001131237" to OpenFoodFactsProduct("8594001131237", "Radegast Rázná 10° 0,5l plech", 40, 0.4, 4.0, 0.0, "Pantry"),
-        "8585000781112" to OpenFoodFactsProduct("8585000781112", "Zlatý Bažant 10° 0,5l plech (SK)", 40, 0.4, 4.0, 0.0, "Pantry"),
-        "8585000781129" to OpenFoodFactsProduct("8585000781129", "Corgoň 10° 0,5l plech (SK)", 40, 0.4, 4.1, 0.0, "Pantry"),
-
-        // Cidery
-        "5391522310046" to OpenFoodFactsProduct("5391522310046", "Bulmers Original Apple Cider 4,5% 0,5l", 52, 0.0, 6.5, 0.0, "Pantry"),
-        "5000112113558" to OpenFoodFactsProduct("5000112113558", "Strongbow Original Apple Cider 5% 0,5l", 50, 0.0, 6.0, 0.0, "Pantry"),
-        "8594022310016" to OpenFoodFactsProduct("8594022310016", "Cider Štramberk 4% 0,5l (CZ)", 48, 0.0, 5.8, 0.0, "Pantry"),
-
-        // =========================================================
-        // ZÁKLADNÍ POTRAVINÁŘSKÉ INGREDIENCE (Recipe staples)
-        // =========================================================
-
-        // Cukr / Sugar
-        "8594002131401" to OpenFoodFactsProduct("8594002131401", "Krystalový cukr bílý 1kg (Cukrovar Dobrovice)", 400, 0.0, 99.8, 0.0, "Pantry"),
-        "8594002131418" to OpenFoodFactsProduct("8594002131418", "Moučkový cukr 500g (Cukrovar Dobrovice)", 400, 0.0, 99.9, 0.0, "Pantry"),
-        "8594002131425" to OpenFoodFactsProduct("8594002131425", "Vanilkový cukr 3x8g (Dr. Oetker)", 390, 0.0, 97.0, 0.0, "Pantry"),
-        "8594002131432" to OpenFoodFactsProduct("8594002131432", "Třtinový cukr hnědý 500g (Natura)", 398, 0.0, 98.0, 0.0, "Pantry"),
-        "5904248000010" to OpenFoodFactsProduct("5904248000010", "Cukier puder 500g (polský, Diamant)", 400, 0.0, 99.9, 0.0, "Pantry"),
-
-        // Sůl / Salt
-        "8594002131449" to OpenFoodFactsProduct("8594002131449", "Sůl kuchyňská jodovaná 1kg (Solminerale)", 0, 0.0, 0.0, 0.0, "Pantry"),
-        "8594002131456" to OpenFoodFactsProduct("8594002131456", "Mořská sůl hrubá 500g (Vitana)", 0, 0.0, 0.0, 0.0, "Pantry"),
-        "8594002131463" to OpenFoodFactsProduct("8594002131463", "Himalájská sůl růžová 500g", 0, 0.0, 0.0, 0.0, "Pantry"),
-
-        // Pepř, koření / Pepper & spices
-        "8594002131470" to OpenFoodFactsProduct("8594002131470", "Mletý černý pepř 50g (Vitana)", 270, 11.0, 64.0, 3.3, "Pantry"),
-        "8594002131487" to OpenFoodFactsProduct("8594002131487", "Paprika sladká mletá 100g (Vitana)", 282, 15.0, 34.0, 12.0, "Pantry"),
-        "8594002131494" to OpenFoodFactsProduct("8594002131494", "Paprika pálivá mletá 50g (Vitana)", 318, 14.0, 34.0, 17.0, "Pantry"),
-        "8594002131500" to OpenFoodFactsProduct("8594002131500", "Majoránka sušená 10g (Vitana)", 271, 12.7, 20.0, 7.0, "Pantry"),
-        "8594002131517" to OpenFoodFactsProduct("8594002131517", "Kmín celý 50g (Vitana)", 375, 18.0, 44.0, 22.0, "Pantry"),
-        "8594002131524" to OpenFoodFactsProduct("8594002131524", "Skořice mletá 40g (Vitana)", 261, 3.9, 56.0, 3.2, "Pantry"),
-        "8594002131531" to OpenFoodFactsProduct("8594002131531", "Hřebíček mletý 20g (Vitana)", 275, 6.0, 61.0, 13.0, "Pantry"),
-        "8594002131548" to OpenFoodFactsProduct("8594002131548", "Bobkový list sušený 8g (Vitana)", 313, 8.0, 75.0, 8.4, "Pantry"),
-        "8594002131555" to OpenFoodFactsProduct("8594002131555", "Nové koření celé 20g (Vitana)", 265, 6.1, 72.0, 8.7, "Pantry"),
-        "8594002131562" to OpenFoodFactsProduct("8594002131562", "Tymián sušený 10g (Vitana)", 276, 9.1, 45.0, 7.4, "Pantry"),
-        "8594002131579" to OpenFoodFactsProduct("8594002131579", "Bazalka sušená 10g (Vitana)", 233, 23.0, 7.3, 4.0, "Pantry"),
-        "8594002131586" to OpenFoodFactsProduct("8594002131586", "Kurkuma mletá 50g (Vitana)", 354, 8.0, 65.0, 9.2, "Pantry"),
-        "8594002131593" to OpenFoodFactsProduct("8594002131593", "Zázvor mletý 30g (Vitana)", 335, 8.0, 71.0, 4.2, "Pantry"),
-        "8594002131609" to OpenFoodFactsProduct("8594002131609", "Grilovací koření 50g (Maggi)", 320, 8.0, 55.0, 8.0, "Pantry"),
-
-        // Oleje / Oils & Vinegar
-        "8594008125290" to OpenFoodFactsProduct("8594008125290", "Slunečnicový olej 1l (Natura)", 900, 0.0, 0.0, 100.0, "Pantry"),
-        "8594008125306" to OpenFoodFactsProduct("8594008125306", "Řepkový olej 1l (Palma)", 900, 0.0, 0.0, 100.0, "Pantry"),
-        "8594008125313" to OpenFoodFactsProduct("8594008125313", "Extra panenský olivový olej 0,5l (Olivio)", 824, 0.0, 0.0, 91.6, "Pantry"),
-        "8594008125320" to OpenFoodFactsProduct("8594008125320", "Vinný ocet bílý 350ml (Vitana)", 22, 0.0, 5.5, 0.0, "Pantry"),
-        "8594008125337" to OpenFoodFactsProduct("8594008125337", "Jablečný ocet 500ml (Hamé)", 15, 0.0, 3.5, 0.0, "Pantry"),
-        "8594008125344" to OpenFoodFactsProduct("8594008125344", "Balzamikový ocet di Modena 250ml (Mazzetti)", 122, 0.5, 27.0, 0.1, "Pantry"),
-
-        // Mouka, prášek do pečiva / Flour & Baking
-        "8594008125351" to OpenFoodFactsProduct("8594008125351", "Hladká mouka pšeničná T450 1kg (Penam)", 348, 10.5, 74.0, 1.2, "Pantry"),
-        "8594008125368" to OpenFoodFactsProduct("8594008125368", "Polohrubá mouka 1kg (Penam)", 347, 10.5, 73.5, 1.2, "Pantry"),
-        "8594008125375" to OpenFoodFactsProduct("8594008125375", "Hrubá mouka krupice 1kg (Penam)", 345, 10.5, 73.0, 1.2, "Pantry"),
-        "8594008125382" to OpenFoodFactsProduct("8594008125382", "Prášek do pečiva 3x12g (Dr. Oetker)", 235, 2.2, 53.0, 0.0, "Pantry"),
-        "8594008125399" to OpenFoodFactsProduct("8594008125399", "Jedlá soda 75g (Dr. Oetker)", 0, 0.0, 0.0, 0.0, "Pantry"),
-        "8594008125405" to OpenFoodFactsProduct("8594008125405", "Strouhaná houska 500g (Penam)", 355, 11.0, 69.0, 2.5, "Pantry"),
-        "8594008125412" to OpenFoodFactsProduct("8594008125412", "Bramborový škrob 200g (Gustin)", 340, 0.2, 84.0, 0.1, "Pantry"),
-        "8594008125429" to OpenFoodFactsProduct("8594008125429", "Kakaový prášek 100g (Dr. Oetker)", 368, 21.0, 12.0, 22.0, "Pantry"),
-        "8594008125436" to OpenFoodFactsProduct("8594008125436", "Rýžová mouka bezlepková 500g", 360, 6.0, 80.0, 0.5, "Pantry"),
-
-        // Rýže, luštěniny / Rice & Legumes
-        "8594008125443" to OpenFoodFactsProduct("8594008125443", "Rýže dlouhozrnná bílá 1kg (Lagris)", 358, 7.0, 78.0, 0.6, "Pantry"),
-        "8594008125450" to OpenFoodFactsProduct("8594008125450", "Rýže jasmínová 1kg (Vitana)", 362, 7.2, 79.0, 0.5, "Pantry"),
-        "8594008125467" to OpenFoodFactsProduct("8594008125467", "Rýže arborio risotto 500g (Lagris)", 352, 7.0, 76.0, 1.2, "Pantry"),
-        "8594008125474" to OpenFoodFactsProduct("8594008125474", "Červená čočka 500g (Lagris)", 320, 25.0, 50.0, 1.5, "Pantry"),
-        "8594008125481" to OpenFoodFactsProduct("8594008125481", "Zelená čočka 500g (Lagris)", 300, 24.0, 46.0, 1.5, "Pantry"),
-        "8594008125498" to OpenFoodFactsProduct("8594008125498", "Sterilovaná bílá fazole 400g (Giana)", 87, 5.4, 13.4, 0.6, "Pantry"),
-        "8594008125504" to OpenFoodFactsProduct("8594008125504", "Sterilovaný hrášek 400g (Bonduelle)", 75, 5.0, 12.0, 0.5, "Pantry"),
-        "8594008125511" to OpenFoodFactsProduct("8594008125511", "Kukuřice sterilovaná 340g (Bonduelle)", 86, 2.9, 18.0, 1.2, "Pantry"),
-        "8594008125528" to OpenFoodFactsProduct("8594008125528", "Cizrna konzervovaná 400g (Giana)", 120, 7.0, 18.0, 2.5, "Pantry"),
-
-        // Básicke zeleniny / Basic vegetables
-        "8594008125535" to OpenFoodFactsProduct("8594008125535", "Rajčatový protlak 500g (Vitana)", 28, 1.2, 5.4, 0.1, "Pantry"),
-        "8594008125542" to OpenFoodFactsProduct("8594008125542", "Sterilovaná rajčata celá 400g (Giana)", 22, 1.0, 4.0, 0.2, "Pantry"),
-        "8594008125559" to OpenFoodFactsProduct("8594008125559", "Rajčatová passata 680g (Mutti)", 32, 1.5, 5.8, 0.2, "Pantry"),
-        "8594008125566" to OpenFoodFactsProduct("8594008125566", "Mražená zelenina směs 1kg (Bonduelle)", 55, 3.5, 9.0, 0.5, "Freezer"),
-        "8594008125573" to OpenFoodFactsProduct("8594008125573", "Mražený špenát 450g (Findus)", 28, 2.8, 2.0, 0.8, "Freezer"),
-        "8594008125580" to OpenFoodFactsProduct("8594008125580", "Mražený hrášek 400g (Bonduelle)", 72, 5.0, 11.0, 0.5, "Freezer"),
-        "8594008125597" to OpenFoodFactsProduct("8594008125597", "Mražená brokolice 400g (Bonduelle)", 35, 3.8, 4.0, 0.4, "Freezer"),
-
-        // Čaje / Teas
-        "8594008125603" to OpenFoodFactsProduct("8594008125603", "Černý čaj porcovaný Earl Grey 25sáčků (Teekanne)", 2, 0.1, 0.2, 0.0, "Pantry"),
-        "8594008125610" to OpenFoodFactsProduct("8594008125610", "Zelený čaj Sencha porcovaný 20sáčků (Teekanne)", 1, 0.1, 0.1, 0.0, "Pantry"),
-        "8594008125627" to OpenFoodFactsProduct("8594008125627", "Ovocný čaj Lesní ovoce 20sáčků (Teekanne)", 5, 0.1, 0.8, 0.0, "Pantry"),
-        "8594008125634" to OpenFoodFactsProduct("8594008125634", "Šípkový čaj bylinný 20sáčků (Teekanne)", 4, 0.1, 0.6, 0.0, "Pantry"),
-        "8594008125641" to OpenFoodFactsProduct("8594008125641", "Heřmánkový čaj 20sáčků (Teekanne)", 3, 0.1, 0.4, 0.0, "Pantry"),
-        "8594008125658" to OpenFoodFactsProduct("8594008125658", "Zázvorový čaj s citronem 20sáčků (Teekanne)", 4, 0.1, 0.6, 0.0, "Pantry"),
-        "8594008125665" to OpenFoodFactsProduct("8594008125665", "Rooibos čaj s vanilkou 20sáčků (Teekanne)", 4, 0.1, 0.5, 0.0, "Pantry"),
-        "8594008125672" to OpenFoodFactsProduct("8594008125672", "Peprmintový čaj 25sáčků (Teekanne)", 2, 0.1, 0.2, 0.0, "Pantry"),
-
-        // Káva / Coffee
-        "8594008125689" to OpenFoodFactsProduct("8594008125689", "Mletá káva Espresso 250g (Lavazza)", 0, 0.0, 0.0, 0.0, "Pantry"),
-        "8594008125696" to OpenFoodFactsProduct("8594008125696", "Mletá káva Arabica 250g (Jihlavanka)", 0, 0.0, 0.0, 0.0, "Pantry"),
-        "8594008125702" to OpenFoodFactsProduct("8594008125702", "Instantní káva Nescafé Gold 200g", 355, 13.0, 49.0, 4.0, "Pantry"),
-        "8594008125719" to OpenFoodFactsProduct("8594008125719", "Kapsle Dolce Gusto Espresso 16ks (Nestle)", 0, 0.0, 0.0, 0.0, "Pantry"),
-
-        // Džusy / Juices
-        "8594008125726" to OpenFoodFactsProduct("8594008125726", "Džus pomerančový 100% 1l (Cappy)", 44, 0.7, 10.0, 0.1, "Pantry"),
-        "8594008125733" to OpenFoodFactsProduct("8594008125733", "Džus jablečný 100% 1l (Cappy)", 47, 0.1, 11.0, 0.0, "Pantry"),
-        "8594008125740" to OpenFoodFactsProduct("8594008125740", "Džus multivitamin 1l (Cappy)", 46, 0.5, 10.5, 0.1, "Pantry"),
-        "8594008125757" to OpenFoodFactsProduct("8594008125757", "Džus grapefruit 100% 1l (Relax)", 40, 0.5, 9.0, 0.1, "Pantry"),
-        "8594008125764" to OpenFoodFactsProduct("8594008125764", "Džus brusinkový 100% 250ml (Relax)", 32, 0.3, 7.5, 0.0, "Pantry"),
-        "8594008125771" to OpenFoodFactsProduct("8594008125771", "Džus granátové jablko 250ml (Relax)", 54, 0.5, 12.5, 0.1, "Pantry"),
-        "8594008125788" to OpenFoodFactsProduct("8594008125788", "Smoothie jahoda & banán 250ml (Cappy)", 70, 0.8, 15.0, 0.3, "Fridge"),
-
-        // Mléčné výrobky základní / Basic dairy
-        "8594008125795" to OpenFoodFactsProduct("8594008125795", "Plnotučné mléko 3,5% 1l (Kunín)", 64, 3.3, 4.7, 3.5, "Fridge"),
-        "8594008125801" to OpenFoodFactsProduct("8594008125801", "Polotučné mléko 1,5% 1l (Kunín)", 46, 3.3, 4.8, 1.5, "Fridge"),
-        "8594008125818" to OpenFoodFactsProduct("8594008125818", "Bezlaktózové mléko 1l (Kunín)", 46, 3.3, 4.8, 1.5, "Fridge"),
-        "8594008125825" to OpenFoodFactsProduct("8594008125825", "Sójový nápoj neslazený 1l (Alpro)", 33, 3.3, 0.9, 1.8, "Pantry"),
-        "8594008125832" to OpenFoodFactsProduct("8594008125832", "Ovesný nápoj 1l (Alpro)", 40, 1.0, 6.6, 1.5, "Pantry"),
-        "8594008125849" to OpenFoodFactsProduct("8594008125849", "Kokosový nápoj 1l (Alpro)", 23, 0.2, 3.0, 1.1, "Pantry"),
-        "8594008125856" to OpenFoodFactsProduct("8594008125856", "Máslo nesoleně 82% 250g (Madeta)", 748, 0.8, 0.7, 82.0, "Fridge"),
-        "8594008125863" to OpenFoodFactsProduct("8594008125863", "Máslo solené 80% 200g (Kunín)", 720, 0.8, 0.6, 80.0, "Fridge"),
-        "8594008125870" to OpenFoodFactsProduct("8594008125870", "Lučina soft cream 200g (Savencia)", 248, 5.5, 3.5, 23.5, "Fridge"),
-        "8594008125887" to OpenFoodFactsProduct("8594008125887", "Mascarpone 250g (Galbani)", 412, 5.0, 3.8, 40.5, "Fridge"),
-        "8594008125894" to OpenFoodFactsProduct("8594008125894", "Ricotta 250g (Galbani)", 134, 9.8, 3.5, 9.2, "Fridge"),
-
-        // Vejce / Eggs
-        "8594008125900" to OpenFoodFactsProduct("8594008125900", "Vejce čerstvá M 10ks (z volného výběhu)", 143, 12.5, 0.7, 9.9, "Fridge"),
-        "8594008125917" to OpenFoodFactsProduct("8594008125917", "Vejce čerstvá L 6ks (klecový chov)", 143, 12.5, 0.7, 9.9, "Fridge"),
-        "8594008125924" to OpenFoodFactsProduct("8594008125924", "Bio vejce 6ks (Ekofarma)", 148, 12.8, 0.7, 10.2, "Fridge"),
-
-        // Čokoláda na pečení / Baking chocolate
-        "8594008125931" to OpenFoodFactsProduct("8594008125931", "Čokoláda tmavá 70% 100g (Lindt)", 580, 10.0, 33.0, 43.0, "Pantry"),
-        "8594008125948" to OpenFoodFactsProduct("8594008125948", "Čokoládová poleva bílá 200g (Dr. Oetker)", 495, 5.5, 56.5, 28.0, "Pantry"),
-        "8594008125955" to OpenFoodFactsProduct("8594008125955", "Čokoládová poleva tmavá 200g (Dr. Oetker)", 508, 5.0, 48.0, 32.5, "Pantry"),
-        "8594008125962" to OpenFoodFactsProduct("8594008125962", "Mléčná čokoláda Milka 100g (Mondelez)", 535, 7.0, 57.0, 30.0, "Pantry"),
-
-        // Grenadine & sirupy / Syrups for cocktails
-        "8594008125979" to OpenFoodFactsProduct("8594008125979", "Grenadine sirup malinový 700ml (Moulin de Valdonne)", 280, 0.0, 70.0, 0.0, "Pantry"),
-        "8594008125986" to OpenFoodFactsProduct("8594008125986", "Sirup Monin Vanilka 700ml (Monin)", 320, 0.0, 80.0, 0.0, "Pantry"),
-        "8594008125993" to OpenFoodFactsProduct("8594008125993", "Sirup Monin Mango 700ml (Monin)", 300, 0.0, 75.0, 0.0, "Pantry"),
-        "8594008126006" to OpenFoodFactsProduct("8594008126006", "Třtinový cukrový sirup 700ml (Monin)", 268, 0.0, 67.0, 0.0, "Pantry"),
-        "8594008126013" to OpenFoodFactsProduct("8594008126013", "Blue Curaçao sirup 700ml (Monin)", 295, 0.0, 74.0, 0.0, "Pantry"),
-        "8594008126020" to OpenFoodFactsProduct("8594008126020", "Angostura Aromatic Bitters 200ml", 280, 0.0, 0.0, 0.0, "Pantry"),
-        "8594008126037" to OpenFoodFactsProduct("8594008126037", "Limetky čerstvé 500g síťka", 30, 0.7, 10.5, 0.2, "Fridge"),
-        "8594008126044" to OpenFoodFactsProduct("8594008126044", "Limetková šťáva 200ml (Sicilia)", 28, 0.4, 7.0, 0.1, "Fridge"),
-        "8594008126051" to OpenFoodFactsProduct("8594008126051", "Citronová šťáva 200ml (Sicilia)", 21, 0.3, 5.0, 0.1, "Fridge"),
-
-        // =========================================================
-        // 🇨🇿 ČESKÉ MLÉČNÉ VÝROBKY
-        // =========================================================
-        "8594008130001" to OpenFoodFactsProduct("8594008130001", "Florian jogurt jahoda 150g (Olma)", 96, 3.2, 14.0, 2.8, "Fridge", sugars = 13.0, servingSizeG = 150),
-        "8594008130002" to OpenFoodFactsProduct("8594008130002", "Selský jogurt bílý 200g (Olma)", 64, 4.5, 5.5, 3.0, "Fridge", sugars = 5.0, servingSizeG = 200),
-        "8594008130003" to OpenFoodFactsProduct("8594008130003", "Pribináček vanilkový 80g (Savencia)", 145, 5.0, 18.0, 5.5, "Fridge", sugars = 16.0, servingSizeG = 80),
-        "8594008130004" to OpenFoodFactsProduct("8594008130004", "Termix vanilkový 90g (Danone)", 150, 4.8, 19.0, 6.0, "Fridge", sugars = 17.0, servingSizeG = 90),
-        "8594008130005" to OpenFoodFactsProduct("8594008130005", "Lipánek tvarohový dezert 100g (Savencia)", 135, 6.0, 16.0, 5.0, "Fridge", sugars = 14.0, servingSizeG = 100),
-        "8594008130006" to OpenFoodFactsProduct("8594008130006", "Smetanový jogurt bílý 150g (Kunín)", 110, 3.0, 13.0, 5.0, "Fridge", sugars = 12.0, servingSizeG = 150),
-        "8594008130007" to OpenFoodFactsProduct("8594008130007", "Selský jogurt bílý 180g (Hollandia)", 75, 4.0, 6.0, 3.8, "Fridge", sugars = 5.5, servingSizeG = 180),
-        "8594008130008" to OpenFoodFactsProduct("8594008130008", "Skyr jahoda 140g (Milko)", 70, 11.0, 6.5, 0.2, "Fridge", sugars = 6.0, servingSizeG = 140),
-        "8594008130009" to OpenFoodFactsProduct("8594008130009", "Jihočeský Eidam 30% plátky 100g (Madeta)", 280, 28.0, 0.1, 18.0, "Fridge", sugars = 0.1, servingSizeG = 50),
-        "8594008130010" to OpenFoodFactsProduct("8594008130010", "Lipno 45% sýr 100g (Madeta)", 340, 24.0, 0.5, 27.0, "Fridge", sugars = 0.5, servingSizeG = 50),
-        "8594008130011" to OpenFoodFactsProduct("8594008130011", "Gouda plátky 100g (Albert)", 356, 25.0, 0.0, 28.0, "Fridge", sugars = 0.0, servingSizeG = 50),
-        "8594008130012" to OpenFoodFactsProduct("8594008130012", "Niva 100g (Krásno)", 350, 18.0, 1.0, 30.0, "Fridge", sugars = 1.0, servingSizeG = 30),
-        "8594008130013" to OpenFoodFactsProduct("8594008130013", "Žervé čerstvý sýr 80g (Savencia)", 230, 8.0, 3.0, 20.0, "Fridge", sugars = 3.0, servingSizeG = 40),
-        "8594008130014" to OpenFoodFactsProduct("8594008130014", "Tvaroh měkký jemný 250g (Madeta)", 70, 13.0, 4.0, 0.3, "Fridge", sugars = 4.0, servingSizeG = 100),
-        "8594008130015" to OpenFoodFactsProduct("8594008130015", "Smetana ke šlehání 33% 250ml (Tatra)", 320, 2.3, 3.0, 33.0, "Fridge", sugars = 3.0, servingSizeG = 30),
-        "8594008130016" to OpenFoodFactsProduct("8594008130016", "Zakysaná smetana 15% 200g (Kunín)", 160, 3.0, 4.0, 15.0, "Fridge", sugars = 4.0, servingSizeG = 50),
-        "8594008130017" to OpenFoodFactsProduct("8594008130017", "Kefírové mléko 450ml (Hollandia)", 60, 3.3, 4.5, 3.0, "Fridge", sugars = 4.5, servingSizeG = 250),
-        "8594008130018" to OpenFoodFactsProduct("8594008130018", "Acidofilní mléko 1l (Olma)", 60, 3.3, 4.8, 3.2, "Fridge", sugars = 4.8, servingSizeG = 250),
-        "8594008130019" to OpenFoodFactsProduct("8594008130019", "Cottage cheese bílý 150g (Pribina)", 100, 12.0, 3.0, 4.5, "Fridge", sugars = 3.0, servingSizeG = 100),
-        "8594008130020" to OpenFoodFactsProduct("8594008130020", "Mozzarella 125g (Galbani)", 248, 18.0, 1.0, 19.0, "Fridge", sugars = 1.0, servingSizeG = 60),
-
-        // =========================================================
-        // 🇨🇿 ČESKÉ UZENINY A MASO
-        // =========================================================
-        "8594008130021" to OpenFoodFactsProduct("8594008130021", "Vysočina salám 100g (Kostelecké uzeniny)", 330, 14.0, 2.0, 29.0, "Fridge", sugars = 1.0, servingSizeG = 50),
-        "8594008130022" to OpenFoodFactsProduct("8594008130022", "Gothajský salám 100g (Krahulík)", 270, 12.0, 1.5, 24.0, "Fridge", sugars = 1.0, servingSizeG = 50),
-        "8594008130023" to OpenFoodFactsProduct("8594008130023", "Šunkový salám 100g (Le & Co)", 200, 15.0, 2.0, 14.0, "Fridge", sugars = 1.0, servingSizeG = 50),
-        "8594008130024" to OpenFoodFactsProduct("8594008130024", "Debrecínská pečeně 100g (Váhala)", 230, 18.0, 1.0, 17.0, "Fridge", sugars = 0.5, servingSizeG = 50),
-        "8594008130025" to OpenFoodFactsProduct("8594008130025", "Špekáčky 100g (Krahulík)", 290, 12.0, 1.0, 26.0, "Fridge", sugars = 0.5, servingSizeG = 130),
-        "8594008130026" to OpenFoodFactsProduct("8594008130026", "Párky jemné 100g (Kostelecké uzeniny)", 280, 11.0, 1.5, 25.0, "Fridge", sugars = 1.0, servingSizeG = 100),
-        "8594008130027" to OpenFoodFactsProduct("8594008130027", "Lovecký salám 100g (Kmotr)", 380, 18.0, 1.0, 34.0, "Pantry", sugars = 0.5, servingSizeG = 50),
-        "8594008130028" to OpenFoodFactsProduct("8594008130028", "Anglická slanina plátky 100g (Steinhauser)", 320, 14.0, 0.5, 29.0, "Fridge", sugars = 0.5, servingSizeG = 30),
-        "8594008130029" to OpenFoodFactsProduct("8594008130029", "Šunka nejvyšší jakosti 100g (Steinhauser)", 110, 19.0, 1.0, 3.5, "Fridge", sugars = 0.5, servingSizeG = 50),
-        "8594008130030" to OpenFoodFactsProduct("8594008130030", "Kuřecí prsa filety 500g (Vodňanské kuře)", 110, 23.0, 0.0, 1.5, "Fridge", sugars = 0.0, servingSizeG = 150),
-        "8594008130031" to OpenFoodFactsProduct("8594008130031", "Mleté maso hovězí 500g (MAKRO)", 250, 18.0, 0.0, 20.0, "Fridge", sugars = 0.0, servingSizeG = 150),
-        "8594008130032" to OpenFoodFactsProduct("8594008130032", "Vepřová krkovice 1kg", 240, 17.0, 0.0, 19.0, "Fridge", sugars = 0.0, servingSizeG = 150),
-
-        // =========================================================
-        // 🇨🇿 PEČIVO
-        // =========================================================
-        "8594008130033" to OpenFoodFactsProduct("8594008130033", "Chléb Šumava 1200g (Penam)", 240, 7.5, 47.0, 1.2, "Pantry", sugars = 2.0, servingSizeG = 50),
-        "8594008130034" to OpenFoodFactsProduct("8594008130034", "Toastový chléb světlý 500g (Penam)", 265, 8.0, 49.0, 3.5, "Pantry", sugars = 4.0, servingSizeG = 50),
-        "8594008130035" to OpenFoodFactsProduct("8594008130035", "Rohlík tukový 43g (Penam)", 290, 9.0, 56.0, 3.5, "Pantry", sugars = 3.0, servingSizeG = 43),
-        "8594008130036" to OpenFoodFactsProduct("8594008130036", "Houska sezamová 60g (Odkolek)", 280, 9.0, 53.0, 4.0, "Pantry", sugars = 3.5, servingSizeG = 60),
-        "8594008130037" to OpenFoodFactsProduct("8594008130037", "Knäckebrot žitný 250g (Wasa)", 330, 9.0, 64.0, 2.5, "Pantry", sugars = 1.5, servingSizeG = 20),
-
-        // =========================================================
-        // 🇨🇿 SLADKOSTI A ČOKOLÁDY
-        // =========================================================
-        "8594008130038" to OpenFoodFactsProduct("8594008130038", "BeBe Dobré ráno cereální 50g (Opavia)", 430, 8.0, 70.0, 13.0, "Pantry", sugars = 22.0, servingSizeG = 50),
-        "8594008130039" to OpenFoodFactsProduct("8594008130039", "Tatranky oříškové 45g (Opavia)", 520, 7.0, 58.0, 29.0, "Pantry", sugars = 35.0, servingSizeG = 45),
-        "8594008130040" to OpenFoodFactsProduct("8594008130040", "Fidorka kokosová 30g (Opavia)", 540, 5.0, 55.0, 33.0, "Pantry", sugars = 45.0, servingSizeG = 30),
-        "8594008130041" to OpenFoodFactsProduct("8594008130041", "Kolonáda lázeňské oplatky 175g (Opavia)", 490, 6.0, 65.0, 23.0, "Pantry", sugars = 40.0, servingSizeG = 30),
-        "8594008130042" to OpenFoodFactsProduct("8594008130042", "Studentská pečeť mléčná 180g (Orion)", 530, 6.5, 55.0, 32.0, "Pantry", sugars = 50.0, servingSizeG = 25),
-        "8594008130043" to OpenFoodFactsProduct("8594008130043", "Margot 90g (Orion)", 520, 4.0, 58.0, 30.0, "Pantry", sugars = 52.0, servingSizeG = 30),
-        "8594008130044" to OpenFoodFactsProduct("8594008130044", "Kofila tyčinka 35g (Orion)", 460, 4.0, 62.0, 21.0, "Pantry", sugars = 45.0, servingSizeG = 35),
-        "8594008130045" to OpenFoodFactsProduct("8594008130045", "Lentilky 38g (Orion)", 470, 4.5, 70.0, 18.0, "Pantry", sugars = 65.0, servingSizeG = 38),
-        "8594008130046" to OpenFoodFactsProduct("8594008130046", "Modré z nebe 92g (Orion)", 540, 6.0, 54.0, 33.0, "Pantry", sugars = 50.0, servingSizeG = 25),
-        "8594008130047" to OpenFoodFactsProduct("8594008130047", "Milka Alpine Milk 100g (Mondelez)", 530, 6.3, 59.0, 29.0, "Pantry", sugars = 56.0, servingSizeG = 25),
-        "8594008130048" to OpenFoodFactsProduct("8594008130048", "Piškoty dětské 240g (Opavia)", 390, 9.0, 78.0, 4.0, "Pantry", sugars = 28.0, servingSizeG = 30),
-        "8594008130049" to OpenFoodFactsProduct("8594008130049", "Perník s náplní 50g (Marlenka)", 380, 5.0, 70.0, 9.0, "Pantry", sugars = 40.0, servingSizeG = 50),
-        "8594008130050" to OpenFoodFactsProduct("8594008130050", "Marlenka medový dort 800g", 420, 7.0, 50.0, 21.0, "Pantry", sugars = 35.0, servingSizeG = 50),
-
-        // =========================================================
-        // 🇨🇿 NÁPOJE (nealko)
-        // =========================================================
-        "8594008130051" to OpenFoodFactsProduct("8594008130051", "Korunní ochucená limetka 1,5l", 0, 0.0, 0.1, 0.0, "Pantry", sugars = 0.0, servingSizeG = 250),
-        "8594008130052" to OpenFoodFactsProduct("8594008130052", "Poděbradka jemně perlivá 1,5l", 0, 0.0, 0.0, 0.0, "Pantry", sugars = 0.0, servingSizeG = 250),
-        "8594008130053" to OpenFoodFactsProduct("8594008130053", "Toma Natura jablko 1,5l", 38, 0.0, 9.5, 0.0, "Pantry", sugars = 9.0, servingSizeG = 250),
-        "8594008130054" to OpenFoodFactsProduct("8594008130054", "Rajec pramenitá voda 1,5l", 0, 0.0, 0.0, 0.0, "Pantry", sugars = 0.0, servingSizeG = 250),
-        "8594008130055" to OpenFoodFactsProduct("8594008130055", "Semtex Energy 0,5l", 50, 0.0, 12.0, 0.0, "Pantry", sugars = 11.5, servingSizeG = 500),
-        "8594008130056" to OpenFoodFactsProduct("8594008130056", "Big Shock! Energy 0,5l", 48, 0.0, 11.5, 0.0, "Pantry", sugars = 11.0, servingSizeG = 500),
-        "8594008130057" to OpenFoodFactsProduct("8594008130057", "Red Bull Energy 250ml", 46, 0.0, 11.0, 0.0, "Pantry", sugars = 11.0, servingSizeG = 250),
-        "8594008130058" to OpenFoodFactsProduct("8594008130058", "Birell světlý nealko 0,5l", 25, 0.4, 5.0, 0.0, "Pantry", sugars = 1.5, servingSizeG = 500),
-        "8594008130059" to OpenFoodFactsProduct("8594008130059", "Vinea biela sýtená 1,5l", 38, 0.0, 9.0, 0.0, "Pantry", sugars = 9.0, servingSizeG = 250),
-        "8594008130060" to OpenFoodFactsProduct("8594008130060", "Jupí sirup pomeranč 0,7l", 160, 0.0, 40.0, 0.0, "Pantry", sugars = 38.0, servingSizeG = 30),
-        "8594008130061" to OpenFoodFactsProduct("8594008130061", "Granini pomeranč 100% 1l", 45, 0.5, 10.0, 0.0, "Pantry", sugars = 10.0, servingSizeG = 250),
-        "8594008130062" to OpenFoodFactsProduct("8594008130062", "Kubík ovocný kapsička 200ml", 50, 0.3, 12.0, 0.0, "Pantry", sugars = 11.0, servingSizeG = 200),
-        "8594008130063" to OpenFoodFactsProduct("8594008130063", "Hello ledový čaj broskev 1,5l", 28, 0.0, 7.0, 0.0, "Pantry", sugars = 7.0, servingSizeG = 250),
-        "8594008130064" to OpenFoodFactsProduct("8594008130064", "Nestea citron 1,5l", 26, 0.0, 6.5, 0.0, "Pantry", sugars = 6.5, servingSizeG = 250),
-        "8594008130065" to OpenFoodFactsProduct("8594008130065", "Horalka pitná voda neperlivá 1,5l (Dobrá voda)", 0, 0.0, 0.0, 0.0, "Pantry", sugars = 0.0, servingSizeG = 250),
-
-        // =========================================================
-        // 🇸🇰 SLOVENSKÉ PRODUKTY
-        // =========================================================
-        "8594008130066" to OpenFoodFactsProduct("8594008130066", "Rajo Mlieko plnotučné 3,5% 1l", 64, 3.3, 4.7, 3.5, "Fridge", sugars = 4.7, servingSizeG = 250),
-        "8594008130067" to OpenFoodFactsProduct("8594008130067", "Rajo Acidko 950g", 60, 3.0, 5.0, 3.0, "Fridge", sugars = 5.0, servingSizeG = 250),
-        "8594008130068" to OpenFoodFactsProduct("8594008130068", "Sabi jogurt biely 145g", 70, 4.5, 6.0, 3.0, "Fridge", sugars = 5.5, servingSizeG = 145),
-        "8594008130069" to OpenFoodFactsProduct("8594008130069", "Liptov Bryndza 125g", 280, 16.0, 2.0, 23.0, "Fridge", sugars = 2.0, servingSizeG = 50),
-        "8594008130070" to OpenFoodFactsProduct("8594008130070", "Encián plesnivý syr 100g (Zlaté Pole)", 350, 25.0, 0.5, 28.0, "Fridge", sugars = 0.5, servingSizeG = 50),
-        "8594008130071" to OpenFoodFactsProduct("8594008130071", "Sedita Tatranky 45g", 510, 7.0, 60.0, 27.0, "Pantry", sugars = 33.0, servingSizeG = 45),
-        "8594008130072" to OpenFoodFactsProduct("8594008130072", "Sedita Mila rezy 50g", 490, 6.0, 58.0, 26.0, "Pantry", sugars = 35.0, servingSizeG = 50),
-        "8594008130073" to OpenFoodFactsProduct("8594008130073", "Sedita Lina 34g", 520, 6.0, 56.0, 30.0, "Pantry", sugars = 38.0, servingSizeG = 34),
-        "8594008130074" to OpenFoodFactsProduct("8594008130074", "Sedita Kávenky 50g", 500, 7.0, 62.0, 25.0, "Pantry", sugars = 30.0, servingSizeG = 50),
-        "8594008130075" to OpenFoodFactsProduct("8594008130075", "Figaro horká čokoláda 100g", 510, 5.0, 56.0, 31.0, "Pantry", sugars = 48.0, servingSizeG = 25),
-        "8594008130076" to OpenFoodFactsProduct("8594008130076", "Horalky Sedita 50g", 525, 8.0, 57.0, 29.0, "Pantry", sugars = 38.0, servingSizeG = 50),
-        "8594008130077" to OpenFoodFactsProduct("8594008130077", "Vincentka minerálka 0,7l", 0, 0.0, 0.0, 0.0, "Pantry", sugars = 0.0, servingSizeG = 250),
-        "8594008130078" to OpenFoodFactsProduct("8594008130078", "Brumík piškót medový 30g", 360, 6.0, 60.0, 10.0, "Pantry", sugars = 25.0, servingSizeG = 30),
-        "8594008130079" to OpenFoodFactsProduct("8594008130079", "Kofola pôvodná 0,5l (SK)", 32, 0.0, 8.0, 0.0, "Pantry", sugars = 8.0, servingSizeG = 500),
-        "8594008130080" to OpenFoodFactsProduct("8594008130080", "Zlatý Bažant Radler citrón 0,5l", 22, 0.2, 5.0, 0.0, "Pantry", sugars = 4.5, servingSizeG = 500),
-
-        // =========================================================
-        // 🇵🇱 POLSKIE PRODUKTY
-        // =========================================================
-        "8594008130081" to OpenFoodFactsProduct("8594008130081", "Łaciate mleko 3,2% 1l", 61, 3.2, 4.7, 3.2, "Fridge", sugars = 4.7, servingSizeG = 250),
-        "8594008130082" to OpenFoodFactsProduct("8594008130082", "Mlekovita ser Gouda plastry 150g", 356, 25.0, 0.1, 28.0, "Fridge", sugars = 0.1, servingSizeG = 50),
-        "8594008130083" to OpenFoodFactsProduct("8594008130083", "Piątnica twaróg półtłusty 250g", 133, 17.0, 3.5, 5.0, "Fridge", sugars = 3.5, servingSizeG = 100),
-        "8594008130084" to OpenFoodFactsProduct("8594008130084", "Piątnica serek wiejski 200g", 99, 11.0, 3.0, 4.5, "Fridge", sugars = 3.0, servingSizeG = 100),
-        "8594008130085" to OpenFoodFactsProduct("8594008130085", "Bakoma jogurt naturalny 370g", 60, 4.5, 6.0, 2.0, "Fridge", sugars = 6.0, servingSizeG = 150),
-        "8594008130086" to OpenFoodFactsProduct("8594008130086", "Zott Jogobella truskawka 150g", 95, 3.0, 16.0, 2.5, "Fridge", sugars = 15.0, servingSizeG = 150),
-        "8594008130087" to OpenFoodFactsProduct("8594008130087", "Wedel Ptasie Mleczko waniliowe 360g", 420, 2.0, 70.0, 14.0, "Pantry", sugars = 60.0, servingSizeG = 30),
-        "8594008130088" to OpenFoodFactsProduct("8594008130088", "Wedel czekolada mleczna 100g", 540, 7.0, 57.0, 31.0, "Pantry", sugars = 56.0, servingSizeG = 25),
-        "8594008130089" to OpenFoodFactsProduct("8594008130089", "Delicje Wedel pomarańcza 147g", 380, 4.0, 70.0, 9.0, "Pantry", sugars = 45.0, servingSizeG = 30),
-        "8594008130090" to OpenFoodFactsProduct("8594008130090", "Prince Polo XXL 50g", 530, 6.0, 60.0, 29.0, "Pantry", sugars = 40.0, servingSizeG = 50),
-        "8594008130091" to OpenFoodFactsProduct("8594008130091", "Grześki kakaowe 36g", 520, 6.5, 58.0, 29.0, "Pantry", sugars = 36.0, servingSizeG = 36),
-        "8594008130092" to OpenFoodFactsProduct("8594008130092", "Lajkonik paluszki 200g", 390, 11.0, 75.0, 5.0, "Pantry", sugars = 3.0, servingSizeG = 30),
-        "8594008130093" to OpenFoodFactsProduct("8594008130093", "Tymbark jabłko-mięta 1l", 40, 0.0, 9.5, 0.0, "Pantry", sugars = 9.0, servingSizeG = 250),
-        "8594008130094" to OpenFoodFactsProduct("8594008130094", "Kubuś marchew-jabłko-banan 300ml", 52, 0.5, 12.0, 0.2, "Pantry", sugars = 11.0, servingSizeG = 300),
-        "8594008130095" to OpenFoodFactsProduct("8594008130095", "Żywiec Zdrój niegazowana 1,5l", 0, 0.0, 0.0, 0.0, "Pantry", sugars = 0.0, servingSizeG = 250),
-        "8594008130096" to OpenFoodFactsProduct("8594008130096", "Hortex mieszanka kompotowa mrożona 450g", 50, 0.7, 11.0, 0.2, "Freezer", sugars = 9.0, servingSizeG = 100),
-        "8594008130097" to OpenFoodFactsProduct("8594008130097", "Winiary majonez dekoracyjny 400ml", 680, 1.0, 4.0, 73.0, "Pantry", sugars = 3.0, servingSizeG = 15),
-        "8594008130098" to OpenFoodFactsProduct("8594008130098", "Knorr barszcz czerwony instant 60g", 300, 8.0, 55.0, 5.0, "Pantry", sugars = 20.0, servingSizeG = 15),
-        "8594008130099" to OpenFoodFactsProduct("8594008130099", "Łowicz dżem truskawkowy 280g", 220, 0.4, 54.0, 0.1, "Pantry", sugars = 50.0, servingSizeG = 20),
-        "8594008130100" to OpenFoodFactsProduct("8594008130100", "Pudliszki ketchup łagodny 480g", 110, 1.5, 24.0, 0.2, "Pantry", sugars = 20.0, servingSizeG = 20),
-        "8594008130101" to OpenFoodFactsProduct("8594008130101", "Sokołów kabanosy wieprzowe 105g", 440, 28.0, 1.0, 36.0, "Pantry", sugars = 0.5, servingSizeG = 35),
-        "8594008130102" to OpenFoodFactsProduct("8594008130102", "Tarczyński kabanosy drobiowe 105g", 420, 27.0, 1.0, 34.0, "Pantry", sugars = 0.5, servingSizeG = 35),
-        "8594008130103" to OpenFoodFactsProduct("8594008130103", "Krakus szynka konserwowa 300g", 110, 17.0, 2.0, 4.0, "Fridge", sugars = 1.0, servingSizeG = 50),
-        "8594008130104" to OpenFoodFactsProduct("8594008130104", "Morliny parówki berlinki 250g", 270, 11.0, 2.0, 24.0, "Fridge", sugars = 1.0, servingSizeG = 50),
-        "8594008130105" to OpenFoodFactsProduct("8594008130105", "Sokołów boczek wędzony 150g", 320, 15.0, 0.5, 29.0, "Fridge", sugars = 0.5, servingSizeG = 30),
-        "8594008130106" to OpenFoodFactsProduct("8594008130106", "Wawel Kasztanki 100g", 540, 6.0, 55.0, 33.0, "Pantry", sugars = 48.0, servingSizeG = 25),
-        "8594008130107" to OpenFoodFactsProduct("8594008130107", "Lubella makaron świderki 400g", 360, 12.0, 72.0, 1.5, "Pantry", sugars = 3.0, servingSizeG = 75),
-        "8594008130108" to OpenFoodFactsProduct("8594008130108", "Kupiec kasza gryczana 400g", 340, 12.0, 70.0, 2.5, "Pantry", sugars = 1.0, servingSizeG = 75),
-        "8594008130109" to OpenFoodFactsProduct("8594008130109", "Sante granola miodowa 300g", 440, 9.0, 65.0, 15.0, "Pantry", sugars = 20.0, servingSizeG = 50),
-        "8594008130110" to OpenFoodFactsProduct("8594008130110", "Kotlin keczup pikantny 450g", 115, 1.5, 25.0, 0.2, "Pantry", sugars = 21.0, servingSizeG = 20),
-
-        // =========================================================
-        // 🥣 CEREÁLIE A SNÍDANĚ
-        // =========================================================
-        "8594008130111" to OpenFoodFactsProduct("8594008130111", "Nestlé Cini Minis 250g", 420, 6.0, 75.0, 9.0, "Pantry", sugars = 25.0, servingSizeG = 30),
-        "8594008130112" to OpenFoodFactsProduct("8594008130112", "Nestlé Chocapic 250g", 380, 8.0, 73.0, 6.0, "Pantry", sugars = 25.0, servingSizeG = 30),
-        "8594008130113" to OpenFoodFactsProduct("8594008130113", "Nesquik cereálie 250g (Nestlé)", 385, 7.0, 76.0, 4.5, "Pantry", sugars = 24.0, servingSizeG = 30),
-        "8594008130114" to OpenFoodFactsProduct("8594008130114", "Emco ovesné vločky jemné 500g", 370, 13.0, 60.0, 7.0, "Pantry", sugars = 1.0, servingSizeG = 50),
-        "8594008130115" to OpenFoodFactsProduct("8594008130115", "Emco müsli s ovocem 750g", 360, 9.0, 65.0, 8.0, "Pantry", sugars = 18.0, servingSizeG = 50),
-        "8594008130116" to OpenFoodFactsProduct("8594008130116", "Corn Flakes 250g (Kellogg's)", 378, 7.0, 84.0, 0.9, "Pantry", sugars = 8.0, servingSizeG = 30),
-        "8594008130117" to OpenFoodFactsProduct("8594008130117", "Müsli tyčinka jablko 25g (Emco)", 400, 5.0, 70.0, 10.0, "Pantry", sugars = 25.0, servingSizeG = 25),
-        "8594008130118" to OpenFoodFactsProduct("8594008130118", "Fitness cereálie 375g (Nestlé)", 375, 8.0, 75.0, 4.0, "Pantry", sugars = 18.0, servingSizeG = 30),
-        "8594008130119" to OpenFoodFactsProduct("8594008130119", "Granko instantní kakao 350g (Orion)", 380, 5.0, 80.0, 4.0, "Pantry", sugars = 75.0, servingSizeG = 15),
-        "8594008130120" to OpenFoodFactsProduct("8594008130120", "Nutella & Go 52g (Ferrero)", 540, 6.0, 60.0, 30.0, "Pantry", sugars = 50.0, servingSizeG = 52),
-
-        // =========================================================
-        // 🥨 SLANÉ SNACKY A CHIPSY
-        // =========================================================
-        "8594008130121" to OpenFoodFactsProduct("8594008130121", "Bohemia Chips solené 70g", 540, 6.0, 50.0, 34.0, "Pantry", sugars = 0.5, servingSizeG = 30),
-        "8594008130122" to OpenFoodFactsProduct("8594008130122", "Lay's smetana & cibulka 130g", 530, 6.0, 53.0, 32.0, "Pantry", sugars = 2.5, servingSizeG = 30),
-        "8594008130123" to OpenFoodFactsProduct("8594008130123", "Pringles Original 165g", 530, 4.0, 52.0, 34.0, "Pantry", sugars = 1.5, servingSizeG = 30),
-        "8594008130124" to OpenFoodFactsProduct("8594008130124", "Arašídy pražené solené 100g (Tyrkys)", 600, 26.0, 12.0, 49.0, "Pantry", sugars = 4.0, servingSizeG = 30),
-        "8594008130125" to OpenFoodFactsProduct("8594008130125", "Slané tyčinky 100g (Opavia)", 400, 11.0, 75.0, 6.0, "Pantry", sugars = 2.0, servingSizeG = 30),
-        "8594008130126" to OpenFoodFactsProduct("8594008130126", "Křupky Pufáček 50g", 520, 7.0, 56.0, 30.0, "Pantry", sugars = 2.0, servingSizeG = 25),
-        "8594008130127" to OpenFoodFactsProduct("8594008130127", "Doritos Nacho Cheese 100g", 500, 7.0, 60.0, 26.0, "Pantry", sugars = 2.5, servingSizeG = 30),
-        "8594008130128" to OpenFoodFactsProduct("8594008130128", "Mixit ořechový mix 150g", 600, 20.0, 20.0, 50.0, "Pantry", sugars = 10.0, servingSizeG = 30),
-        "8594008130129" to OpenFoodFactsProduct("8594008130129", "Popcorn máslový do mikrovlnky 100g", 480, 8.0, 55.0, 24.0, "Pantry", sugars = 1.0, servingSizeG = 30),
-        "8594008130130" to OpenFoodFactsProduct("8594008130130", "Krekry slané 100g (Lu)", 450, 9.0, 68.0, 15.0, "Pantry", sugars = 3.0, servingSizeG = 30),
-
-        // =========================================================
-        // 🧈 POMAZÁNKY, OLEJE A DOCHUCOVADLA
-        // =========================================================
-        "8594008130131" to OpenFoodFactsProduct("8594008130131", "Rama klasik 400g (Upfield)", 540, 0.1, 0.5, 60.0, "Fridge", sugars = 0.5, servingSizeG = 15),
-        "8594008130132" to OpenFoodFactsProduct("8594008130132", "Flora Original 450g (Upfield)", 535, 0.1, 0.5, 59.0, "Fridge", sugars = 0.5, servingSizeG = 15),
-        "8594008130133" to OpenFoodFactsProduct("8594008130133", "Sádlo vepřové škvařené 250g", 900, 0.0, 0.0, 100.0, "Fridge", sugars = 0.0, servingSizeG = 15),
-        "8594008130134" to OpenFoodFactsProduct("8594008130134", "Hellmann's majonéza 430ml", 720, 1.0, 2.0, 79.0, "Pantry", sugars = 1.5, servingSizeG = 15),
-        "8594008130135" to OpenFoodFactsProduct("8594008130135", "Hořčice plnotučná 200g (Vitana)", 120, 6.0, 10.0, 6.0, "Pantry", sugars = 5.0, servingSizeG = 10),
-        "8594008130136" to OpenFoodFactsProduct("8594008130136", "Kečup jemný 500g (Hellmann's)", 100, 1.5, 22.0, 0.2, "Pantry", sugars = 19.0, servingSizeG = 20),
-        "8594008130137" to OpenFoodFactsProduct("8594008130137", "Worcesterská omáčka 200ml (Vitana)", 110, 1.0, 25.0, 0.1, "Pantry", sugars = 20.0, servingSizeG = 10),
-        "8594008130138" to OpenFoodFactsProduct("8594008130138", "Sójová omáčka 150ml (Kikkoman)", 75, 8.0, 8.0, 0.1, "Pantry", sugars = 2.0, servingSizeG = 10),
-        "8594008130139" to OpenFoodFactsProduct("8594008130139", "Tatarská omáčka 250g (Hellmann's)", 480, 1.5, 8.0, 49.0, "Pantry", sugars = 5.0, servingSizeG = 20),
-        "8594008130140" to OpenFoodFactsProduct("8594008130140", "Zeleninový bujón 60g (Knorr)", 230, 9.0, 25.0, 10.0, "Pantry", sugars = 5.0, servingSizeG = 10),
-
-        // =========================================================
-        // 🍎 OVOCE A ZELENINA (balené)
-        // =========================================================
-        "8594008130141" to OpenFoodFactsProduct("8594008130141", "Banány 1kg", 89, 1.1, 23.0, 0.3, "Fridge", sugars = 17.0, servingSizeG = 120),
-        "8594008130142" to OpenFoodFactsProduct("8594008130142", "Jablka Golden Delicious 1kg", 52, 0.3, 14.0, 0.2, "Fridge", sugars = 10.0, servingSizeG = 150),
-        "8594008130143" to OpenFoodFactsProduct("8594008130143", "Pomeranče 1kg", 47, 0.9, 12.0, 0.1, "Fridge", sugars = 9.0, servingSizeG = 150),
-        "8594008130144" to OpenFoodFactsProduct("8594008130144", "Rajčata keříková 500g", 18, 0.9, 3.5, 0.2, "Fridge", sugars = 2.6, servingSizeG = 100),
-        "8594008130145" to OpenFoodFactsProduct("8594008130145", "Okurka salátová 1 ks", 12, 0.7, 2.0, 0.1, "Fridge", sugars = 1.7, servingSizeG = 100),
-        "8594008130146" to OpenFoodFactsProduct("8594008130146", "Paprika červená 500g", 31, 1.0, 6.0, 0.3, "Fridge", sugars = 4.2, servingSizeG = 100),
-        "8594008130147" to OpenFoodFactsProduct("8594008130147", "Mrkev 1kg", 41, 0.9, 9.6, 0.2, "Fridge", sugars = 4.7, servingSizeG = 100),
-        "8594008130148" to OpenFoodFactsProduct("8594008130148", "Cibule žlutá 1kg", 40, 1.1, 9.0, 0.1, "Pantry", sugars = 4.2, servingSizeG = 50),
-        "8594008130149" to OpenFoodFactsProduct("8594008130149", "Brambory varné 2,5kg", 77, 2.0, 17.0, 0.1, "Pantry", sugars = 0.8, servingSizeG = 200),
-        "8594008130150" to OpenFoodFactsProduct("8594008130150", "Česnek 200g", 149, 6.4, 33.0, 0.5, "Pantry", sugars = 1.0, servingSizeG = 10),
-        "8594008130151" to OpenFoodFactsProduct("8594008130151", "Citrony 500g", 29, 1.1, 9.0, 0.3, "Fridge", sugars = 2.5, servingSizeG = 30),
-        "8594008130152" to OpenFoodFactsProduct("8594008130152", "Avokádo 2 ks", 160, 2.0, 9.0, 15.0, "Fridge", sugars = 0.7, servingSizeG = 100),
-        "8594008130153" to OpenFoodFactsProduct("8594008130153", "Hroznové víno bílé 500g", 69, 0.6, 16.0, 0.2, "Fridge", sugars = 16.0, servingSizeG = 100),
-        "8594008130154" to OpenFoodFactsProduct("8594008130154", "Jahody 500g", 32, 0.7, 7.7, 0.3, "Fridge", sugars = 4.9, servingSizeG = 100),
-        "8594008130155" to OpenFoodFactsProduct("8594008130155", "Borůvky 125g", 57, 0.7, 14.0, 0.3, "Fridge", sugars = 10.0, servingSizeG = 100),
-
-        // =========================================================
-        // 🍕 MRAŽENÉ A HOTOVÁ JÍDLA / PŘÍLOHY
-        // =========================================================
-        "8594008130156" to OpenFoodFactsProduct("8594008130156", "Mražená pizza Ristorante Šunka-sýr 350g (Dr. Oetker)", 250, 11.0, 30.0, 9.0, "Freezer", sugars = 3.0, servingSizeG = 175),
-        "8594008130157" to OpenFoodFactsProduct("8594008130157", "Mražené hranolky 1kg (McCain)", 150, 2.5, 25.0, 4.5, "Freezer", sugars = 0.5, servingSizeG = 150),
-        "8594008130158" to OpenFoodFactsProduct("8594008130158", "Mražené rybí prsty 300g (Frosta)", 200, 12.0, 18.0, 9.0, "Freezer", sugars = 1.0, servingSizeG = 100),
-        "8594008130159" to OpenFoodFactsProduct("8594008130159", "Vanilková zmrzlina 1l (Prima)", 200, 3.5, 24.0, 10.0, "Freezer", sugars = 22.0, servingSizeG = 100),
-        "8594008130160" to OpenFoodFactsProduct("8594008130160", "Listové těsto mražené 400g", 360, 6.0, 38.0, 20.0, "Freezer", sugars = 1.0, servingSizeG = 50),
-        "8594008130161" to OpenFoodFactsProduct("8594008130161", "Houskový knedlík 2 ks (sterilovaný)", 215, 7.0, 44.0, 1.5, "Pantry", sugars = 2.0, servingSizeG = 100),
-        "8594008130162" to OpenFoodFactsProduct("8594008130162", "Gnocchi bramborové 500g (Lagris)", 160, 4.0, 33.0, 1.0, "Fridge", sugars = 1.0, servingSizeG = 200),
-        "8594008130163" to OpenFoodFactsProduct("8594008130163", "Tortilla pšeničná wrap 8 ks 320g", 300, 8.0, 50.0, 8.0, "Pantry", sugars = 2.0, servingSizeG = 60),
-        "8594008130164" to OpenFoodFactsProduct("8594008130164", "Kuskus 500g (Lagris)", 360, 12.0, 72.0, 1.5, "Pantry", sugars = 1.0, servingSizeG = 75),
-        "8594008130165" to OpenFoodFactsProduct("8594008130165", "Bulgur 500g (Lagris)", 350, 12.0, 70.0, 1.5, "Pantry", sugars = 1.0, servingSizeG = 75),
-        "8594008130166" to OpenFoodFactsProduct("8594008130166", "Quinoa bílá 250g (Mderni)", 368, 14.0, 64.0, 6.0, "Pantry", sugars = 2.0, servingSizeG = 75),
-        "8594008130167" to OpenFoodFactsProduct("8594008130167", "Ovesné otruby 250g (Emco)", 320, 17.0, 50.0, 7.0, "Pantry", sugars = 1.0, servingSizeG = 30),
-        "8594008130168" to OpenFoodFactsProduct("8594008130168", "Med květový 500g (Medokomerc)", 320, 0.3, 80.0, 0.0, "Pantry", sugars = 80.0, servingSizeG = 20),
-        "8594008130169" to OpenFoodFactsProduct("8594008130169", "Arašídové máslo 350g (Mixit)", 600, 25.0, 14.0, 50.0, "Pantry", sugars = 8.0, servingSizeG = 20),
-        "8594008130170" to OpenFoodFactsProduct("8594008130170", "Marmeláda jahodová 320g (Hamé)", 230, 0.4, 56.0, 0.1, "Pantry", sugars = 50.0, servingSizeG = 20)
+        "8594112233469" to OpenFoodFactsProduct("8594112233469", "Čokoláda na vaření 100g (Orion)", 520, 5.5, 54.0, 31.0, "Pantry")
     )
 
-    /**
-     * Vrátí obsah cukru na 100 g/ml. Pokud produkt cukr neuvádí (sugars < 0),
-     * odhadne ho podle typu potraviny — cukr je vždy podmnožinou sacharidů.
-     */
-    fun estimateSugars(p: OpenFoodFactsProduct): Double {
-        if (p.sugars >= 0.0) return p.sugars
-        val n = p.name.lowercase()
-        val ratio = when {
-            // Slazené nápoje, sirupy, džusy = prakticky vše cukr
-            n.contains("cola") || n.contains("kola") || n.contains("pepsi") || n.contains("fanta") ||
-                n.contains("sprite") || n.contains("limonád") || n.contains("džus") || n.contains("juice") ||
-                n.contains("nektar") || n.contains("energy") || n.contains("ledový čaj") || n.contains("ice tea") ||
-                n.contains("sirup") || n.contains("tonic") || n.contains("smoothie") -> 1.0
-            // Sladkosti, džemy, med, čokoláda
-            n.contains("čokolád") || n.contains("džem") || n.contains("marmelád") || n.contains("med ") ||
-                n.contains("sušenk") || n.contains("oplatk") || n.contains("bonbón") || n.contains("nutella") ||
-                n.contains("vanilkový cukr") || n.contains("moučkový cukr") || n.contains("třtinový cukr") -> 0.95
-            // Čistý cukr
-            n.contains("krystalový cukr") || n.contains("cukr ") -> 1.0
-            // Mléčné výrobky (laktóza)
-            n.contains("jogurt") || n.contains("mléko") || n.contains("mlieko") || n.contains("kefír") ||
-                n.contains("podmáslí") || n.contains("smetana") -> 0.85
-            // Ovoce
-            n.contains("jablk") || n.contains("banán") || n.contains("borůvk") || n.contains("jahod") ||
-                n.contains("hrozn") || n.contains("pomeranč") -> 0.85
-            // Slané/škrobové základy = minimum cukru
-            n.contains("mouka") || n.contains("rýže") || n.contains("těstovin") || n.contains("olej") ||
-                n.contains("maso") || n.contains("sýr") || n.contains("šunka") || n.contains("salám") ||
-                n.contains("chléb") || n.contains("chlieb") || n.contains("brambor") || n.contains("koření") ||
-                n.contains("sůl") || n.contains("pepř") || n.contains("vejce") -> 0.05
-            else -> 0.3
-        }
-        return Math.round(p.carbohydrates * ratio * 10.0) / 10.0
+    // Gracefully detect if the API key is set which is configured in AI Studio Secrets tab
+    private fun getApiKey(): String {
+        val key = BuildConfig.GEMINI_API_KEY
+        return if (key.isEmpty() || key == "MY_GEMINI_API_KEY") "" else key
     }
 
     /**
-     * Vrátí doporučenou porci v g/ml. Pokud není uvedena, odhadne ji podle typu.
-     */
-    fun estimateServing(p: OpenFoodFactsProduct): Int {
-        p.servingSizeG?.let { return it }
-        val n = p.name.lowercase()
-        return when {
-            n.contains("víno") || n.contains("sekt") || n.contains("prosecco") || n.contains("champagne") ||
-                n.contains("cava") || n.contains("šampaň") -> 150
-            n.contains("likér") || n.contains("rum") || n.contains("gin ") || n.contains("vodka") ||
-                n.contains("whisk") || n.contains("tequila") || n.contains("becherovka") || n.contains("fernet") ||
-                n.contains("slivovice") || n.contains("borovička") || n.contains("aperol") || n.contains("campari") ||
-                n.contains("vermouth") || n.contains("brandy") || n.contains("koňak") -> 40
-            n.contains("pivo") || n.contains("ležák") || n.contains("cider") -> 500
-            n.contains("nápoj") || n.contains("cola") || n.contains("kola") || n.contains("pepsi") ||
-                n.contains("fanta") || n.contains("sprite") || n.contains("džus") || n.contains("juice") ||
-                n.contains("voda") || n.contains("limonád") || n.contains("tonic") || n.contains("energy") -> 250
-            n.contains("olej") || n.contains("ocet") -> 15
-            n.contains("koření") || n.contains("paprika ") || n.contains("pepř") || n.contains("sůl") ||
-                n.contains("majoránka") || n.contains("kmín") || n.contains("skořice") -> 5
-            n.contains("čokolád") || n.contains("sušenk") || n.contains("oplatk") || n.contains("chips") ||
-                n.contains("brambůrk") || n.contains("bonbón") -> 30
-            n.contains("müsli") || n.contains("cereál") || n.contains("vločky") || n.contains("müesli") -> 50
-            n.contains("jogurt") || n.contains("smetana") || n.contains("tvaroh") || n.contains("kefír") -> 150
-            n.contains("sýr") || n.contains("šunka") || n.contains("salám") || n.contains("paštik") ||
-                n.contains("slanina") || n.contains("klobás") -> 50
-            n.contains("mouka") || n.contains("cukr") || n.contains("rýže") || n.contains("těstovin") ||
-                n.contains("kakao") -> 75
-            n.contains("maso") || n.contains("kuřec") || n.contains("vepřov") || n.contains("hovězí") ||
-                n.contains("ryb") -> 150
-            n.contains("mléko") || n.contains("mlieko") -> 250
-            else -> 100
-        }
-    }
-
-    /**
-     * Parse raw receipt text using offline semantic parser.
+     * Parse raw receipt text (Czech/Slovak abbreviated receipt logs) into structured pantry items.
      */
     suspend fun parseReceipt(rawText: String, isSlovak: Boolean): List<ParsedItem> = withContext(Dispatchers.IO) {
-        Log.i(TAG, "StepInTech AI: parsing receipt offline")
-        mockReceiptParser(rawText, isSlovak)
-    }
-
-    /**
-     * Parses raw OCR text offline — extracts brand from known list and corrects common typos.
-     */
-    fun parseOcrResult(ocrText: String): OcrParsedProduct {
-        val knownBrands = listOf(
-            "Karlova Koruna", "Řezníkův Talíř", "Boni", "Machland", "Madeta", "Hamé",
-            "Vitana", "Orion", "Opavia", "Milko", "Kunín", "Hollandia", "Pribina",
-            "Penam", "Sedita", "Agricol", "Giana", "Pikok", "Nowaco", "Lagris",
-            "Kofola", "Rajec", "Bonduelle", "Birell", "Galbani",
-            // Polish brands
-            "Łaciate", "Piątnica", "Mlekovita", "Danone", "Hochland", "Bakoma",
-            "Łowicz", "Winiary", "Pudliszki", "Krakus", "Tarczyński", "Sokołów",
-            "Hortex", "Tymbark", "Wedel", "Graal", "Kupiec", "Barilla", "Kamis",
-            // International
-            "Nutella", "Ferrero", "Milka", "Kinder", "Nestlé", "Hellmann's", "Dr. Oetker"
-        )
-        val typoMap = mapOf(
-            "CAMAMBERT" to "Camembert", "CAMMEMBERT" to "Camembert", "KAMEMBERT" to "Camembert",
-            "EDAMM" to "Eidam", "GAUDA" to "Gouda", "JOGHURT" to "Jogurt",
-            "TVAROG" to "Tvaroh", "SUNKA" to "Šunka", "KLOBASA" to "Klobása",
-            "MLEKO" to "Mléko", "MASLO" to "Máslo"
-        )
-
-        var corrected = ocrText
-        for ((typo, fix) in typoMap) {
-            corrected = corrected.replace(typo, fix, ignoreCase = true)
+        val apiKey = getApiKey()
+        if (apiKey.isEmpty()) {
+            Log.w(TAG, "StepInTech AI API Key missing. Using localized CZ/SK semantic fallback parser.")
+            return@withContext mockReceiptParser(rawText, isSlovak)
         }
 
-        val detectedBrand = knownBrands.firstOrNull { corrected.contains(it, ignoreCase = true) } ?: ""
-        val firstLine = corrected.lines().firstOrNull { it.isNotBlank() }?.trim() ?: corrected.take(40)
-        val productName = if (detectedBrand.isNotEmpty())
-            firstLine.replace(detectedBrand, "", ignoreCase = true).trim()
-        else firstLine
+        val prompt = """
+            You are FridgeBuddy OCR parser for Czech (CZ) and Slovak (SK) receipts.
+            Take the following raw receipt text which contains abbreviated words common in local supermarkets (Albert, Lidl, Kaufland, Tesco, Billa, Rohlík).
+            Map abbreviations to full names. For example:
+            - "CHLEB SUM" or "CHLÉB ŠUM." -> "Chléb Šumava"
+            - "ML.POLOTUC" -> "Mléko polotučné"
+            - "MASLO L." -> "Máslo"
+            - "RAJCAT." -> "Rajčata"
+            - "KUŘ Prsa" -> "Kuřecí prsa"
+            - "SÝR TRV" -> "Sýr tvrdý"
+            
+            Return a JSON array of parsed ingredients. EACH item must have:
+            - "name" (readable capitalized Czech or Slovak ingredient name like "Mléko polotučné")
+            - "quantityHint" (e.g., "1 ks", "250g")
+            - "category" (Must be exactly one of: "Fridge", "Freezer", "Pantry")
+            - "expirationDays" (integer - typical shelf life from buying, e.g., milk is 7 days, bread is 4, meat is 3, canned is 90)
+            - "approxPrice" (numeric approximation of price, e.g., 39.9)
 
-        return OcrParsedProduct(
-            brand = detectedBrand,
-            productName = productName,
-            fullLabel = if (detectedBrand.isNotEmpty()) "$detectedBrand $productName".trim() else productName
-        )
+            Receipt Text:
+            $rawText
+
+            Provide your response ONLY as a valid JSON array, do not wrap in markdown ```json blocks.
+        """.trimIndent()
+
+        try {
+            val responseText = queryStepInTechAi(prompt, apiKey)
+            return@withContext parseJsonItems(responseText)
+        } catch (e: Exception) {
+            Log.e(TAG, "StepInTech AI query failed, using offline fallback", e)
+            return@withContext mockReceiptParser(rawText, isSlovak)
+        }
     }
 
     /**
-     * Parse voice dictation using offline semantic parser.
+     * Parses raw OCR text from a product label, attempting to extract Brand and ProductName.
+     */
+    suspend fun parseOcrResult(ocrText: String, isSlovak: Boolean): OcrParsedProduct? = withContext(Dispatchers.IO) {
+        val apiKey = getApiKey()
+        
+        // Priority known brands
+        val knownBrands = listOf("Karlova Koruna", "Řezníkův Talíř", "Boni", "Machland", "Madeta")
+        var detectedBrand = knownBrands.firstOrNull { ocrText.contains(it, ignoreCase = true) }
+        
+        val prompt = """
+            Jsi StepInTech AI. Při analýze etikety nejprve vyhledej název výrobce/značky. 
+            Pokud značku na etiketě identifikuješ, musíš ji uvést v poli 'brand'. 
+            Pokud je název produktu komolený (např. 'CAMAMBERT'), musíš ho opravit na spisovnou podobu ('Camembert'). 
+            Pokud OCR vidí "MADETA" (u sýrů) -> nastavit značku "Madeta".
+            Pokud značku neznáš, pokus se ji odvodit z textu, ale nikdy ji nevynechávej, pokud je na etiketě uvedena.
+            Tady je předdefinovaná značka (pokud byla nalezena offline z prioritního listu): ${detectedBrand ?: "Nenalezena"}
+            
+            Očisti text od diakritických chyb a nečitelného šumu.
+            Vrať odpověď POUZE jako JSON objekt s poli:
+            {
+              "brand": "string",
+              "productName": "string",
+              "fullLabel": "brand + ' ' + productName"
+            }
+
+            Vstupní OCR text:
+            $ocrText
+        """.trimIndent()
+
+        if (apiKey.isEmpty()) {
+            return@withContext null // Or some fallback logic
+        }
+
+        try {
+            val responseText = queryStepInTechAi(prompt, apiKey)
+            val cleanJson = responseText.replace("```json", "").replace("```", "").trim()
+            val jsObj = org.json.JSONObject(cleanJson)
+            return@withContext OcrParsedProduct(
+                brand = jsObj.optString("brand", detectedBrand ?: "Neznámá značka"),
+                productName = jsObj.optString("productName", ""),
+                fullLabel = jsObj.optString("fullLabel", "")
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "OCR Parse error", e)
+            return@withContext null
+        }
+    }
+
+    /**
+     * Parse voice dictation (freeform conversational entry) to structured pantry items.
      */
     suspend fun parseVoiceInput(spokenText: String, isSlovak: Boolean): List<ParsedItem> = withContext(Dispatchers.IO) {
-        mockVoiceParser(spokenText, isSlovak)
+        val apiKey = getApiKey()
+        if (apiKey.isEmpty()) {
+            return@withContext mockVoiceParser(spokenText, isSlovak)
+        }
+
+        val prompt = """
+            Parse the following spoken Czech/Slovak text into structured grocery items.
+            Voice Input: "$spokenText"
+
+            Extract items with name, quantity estimate, fridge/pantry/freezer category, approx price, and typical expiration days from today.
+            Provide response ONLY as a JSON array where each object has fields:
+            "name", "quantityHint", "category" (either Fridge|Freezer|Pantry), "approxPrice" (Double), "expirationDays" (Int)
+        """.trimIndent()
+
+        try {
+            val responseText = queryStepInTechAi(prompt, apiKey)
+            return@withContext parseJsonItems(responseText)
+        } catch (e: Exception) {
+            return@withContext mockVoiceParser(spokenText, isSlovak)
+        }
     }
 
     /**
@@ -1003,6 +369,9 @@ object StepInTechAiService {
         customRequest: String,
         isSlovak: Boolean
     ): String = withContext(Dispatchers.IO) {
+        val lang = if (isSlovak) "sk" else "cz"
+        val apiKey = getApiKey()
+
         // 1. FILTRACE TYPU JÍDLA: Determine sweet or savoury from prompt/custom request
         val isSweet = customRequest.lowercase().let { r ->
             r.contains("sladk") || r.contains("buchta") || r.contains("kolac") || r.contains("dezert") || 
@@ -1051,7 +420,64 @@ object StepInTechAiService {
             }
         }
 
-        return@withContext generateLocalMockRecipe(finalItems, isSweet, customRequest, isSlovak)
+        if (apiKey.isEmpty()) {
+            return@withContext generateLocalMockRecipe(finalItems, isSweet, customRequest, isSlovak)
+        }
+
+        // Prompt se striktně vynucenými pravidly pro Gemini
+        val prompt = if (isSweet) {
+            """
+                Jsi StepInTech AI - inteligentní generátor receptů se specializací na pečení dezertů a sladkých jídel.
+                Uživatel chce vygenerovat recept na sladké jídlo/dezert na základě požadavku: "$customRequest".
+                
+                Zde jsou dostupné vyfiltrované suroviny bezpečné pro pečení: ${finalItems.joinToString(", ")}.
+                
+                Při generování musíš důsledně dodržovat následující pravidla:
+                1. DO SLADKÝCH DEZERTŮ (jako koláče, buchty, závin) JE PŘÍSNĚ ZAKÁZÁNO vkládat jakékoliv slané nebo nevhodné suroviny jako ryby, maso, uzeniny, cibuli, česnek, pepř, papriku, sójovou omáčku, vývar nebo kořenovou zeleninu.
+                2. NIKDY nesmíš pro rybízovou buchtu nebo jiný dezert použít rybu! Ryba, maso a koření (kromě skořice/vanilky) jsou v tomto kontextu nepřípustné suroviny.
+                3. Pokud ti v seznamech přece jen proklouznou nevhodné suroviny, zcela je ignoruj a použij pouze mouku, cukr, vejce, mléko, ovoce, kypřící prášek, tuk nebo vodu.
+                4. Před odesláním odpovědi proveď vnitřní samokontrolu: "Obsahuje tento recept slanou surovinu?" Pokud ano, okamžitě ji smaž a nahraď neutrální surovinou (např. mlékem, máslem nebo vodou).
+                
+                Vygeneruj detailní a krásně formátovaný recept v jazyce: ${if (isSlovak) "slovenština" else "čeština"}.
+                Uveď:
+                - Název receptu (např. Nadýchaná rybízová buchta)
+                - Doba přípravy a nutriční hodnoty
+                - Seznam ingrediencí (se zdůrazněním, že jsou z lednice a bez nežádoucích příměsí)
+                - Postup v krocích
+            """.trimIndent()
+        } else {
+            """
+                Jsi StepInTech AI - inteligentní kuchařský asistent.
+                Vygeneruj recept na slané jídlo na základě požadavku: "$customRequest".
+                Dostupné suroviny: ${finalItems.joinToString(", ")}.
+                
+                Vygeneruj detailní recept v jazyce: ${if (isSlovak) "slovenština" else "čeština"}.
+                Zahrň:
+                - Název receptu
+                - Dobu přípravy a nutriční hodnoty
+                - Seznam ingrediencí
+                - Postup v krocích
+            """.trimIndent()
+        }
+
+        try {
+            val responseText = queryStepInTechAi(prompt, apiKey)
+            // Vnitřní ujištění o absenci slané příměsi
+            var cleanRep = responseText
+            if (isSweet) {
+                // Poslední záchranný filtr na lži ze sítě
+                val badWords = listOf("ryb", "mas", "mäs", "cibul", "cibuľ", "pepř", "koren", "česn", "cesn")
+                badWords.forEach { word ->
+                    if (cleanRep.contains(word, ignoreCase = true)) {
+                        cleanRep = cleanRep.replace(Regex("(?i)[^.]*\\b$word[^.]*\\."), " Přidáme sklenici mléka pro zjemnění těsta.")
+                    }
+                }
+            }
+            return@withContext cleanRep
+        } catch (e: Exception) {
+            Log.e(TAG, "Gemini API failed, using improved offline compliance rules", e)
+            return@withContext generateLocalMockRecipe(finalItems, isSweet, customRequest, isSlovak)
+        }
     }
 
     private fun generateLocalMockRecipe(
@@ -1175,7 +601,66 @@ object StepInTechAiService {
         }
     }
 
-    // --- Offline Semantic Parsers ---
+    private fun queryStepInTechAi(prompt: String, apiKey: String): String {
+        val url = "https://generativelanguage.googleapis.com/v1beta/models/$MODEL:generateContent?key=$apiKey"
+        
+        val jsonPayload = JSONObject().apply {
+            put("contents", JSONArray().apply {
+                put(JSONObject().apply {
+                    put("parts", JSONArray().apply {
+                        put(JSONObject().apply {
+                            put("text", prompt)
+                        })
+                    })
+                })
+            })
+        }
+
+        val mediaType = "application/json".toMediaType()
+        val requestBody = jsonPayload.toString().toRequestBody(mediaType)
+        
+        val request = Request.Builder()
+            .url(url)
+            .post(requestBody)
+            .build()
+
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                throw Exception("HTTP Error: ${response.code} - ${response.body?.string()}")
+            }
+            val bodyString = response.body?.string() ?: throw Exception("Response body is null")
+            val jsonResponse = JSONObject(bodyString)
+            val candidates = jsonResponse.getJSONArray("candidates")
+            val parts = candidates.getJSONObject(0).getJSONObject("content").getJSONArray("parts")
+            var text = parts.getJSONObject(0).getString("text")
+            
+            // Strip potential markdown JSON code block indicators if any
+            if (text.startsWith("```json")) {
+                text = text.substring(7)
+            }
+            if (text.endsWith("```")) {
+                text = text.substring(0, text.length - 3)
+            }
+            return text.trim()
+        }
+    }
+
+    private fun parseJsonItems(jsonStr: String): List<ParsedItem> {
+        val list = mutableListOf<ParsedItem>()
+        val arr = JSONArray(jsonStr)
+        for (i in 0 until arr.length()) {
+            val obj = arr.getJSONObject(i)
+            val name = obj.getString("name")
+            val qHint = obj.optString("quantityHint", "1 ks")
+            val cat = obj.optString("category", "Fridge")
+            val expDays = obj.optInt("expirationDays", 5)
+            val approxPrice = obj.optDouble("approxPrice", 25.0)
+            list.add(ParsedItem(name, qHint, cat, expDays, approxPrice))
+        }
+        return list
+    }
+
+    // --- High Fidelity Localized Fallbacks (Semantic Offline Parsers) ---
 
     private fun mockReceiptParser(rawText: String, isSlovak: Boolean): List<ParsedItem> {
         val lines = rawText.lowercase().split("\n", ",", ";")
@@ -1383,85 +868,21 @@ object StepInTechAiService {
             }
         }
         val lower = name.lowercase()
-        // Kompletní seznam značek napříč celou databází produktů (CZ/SK/PL/EU).
-        // Víceslovné a překrývající se značky jsou uvedeny jako první, aby se
-        // shoda našla dřív než u kratšího názvu (např. "Coca-Cola" před "Cola").
-        for (b in KNOWN_BRANDS) {
-            if (lower.contains(b.lowercase())) {
-                return b
+        val brands = listOf("madeta", "olma", "sedita", "opavia", "kunín", "hamé", "kofola", "rajec", "pribina", "savencia", "milko", "orion", "ferrero", "galbani", "liptov", "hellmann's", "agricol", "albert", "tesco", "lidl", "billa", "penny", "chodura", "pikok", "dulano", "kmotr", "nowaco", "giana", "valfrutta", "teekanne", "medokomerc", "prima", "dr. oetker", "birell", "red bull", "monster", "semtex", "tiger", "bohemia", "pilsner urquell", "gambrinus", "radegast", "budweiser", "staropramen", "tatra", "savencia", "tatra", "lukana", "agrofert", "tatrakon")
+        for (b in brands) {
+            if (lower.contains(b)) {
+                return b.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
             }
         }
         return null
     }
-
-    /** Všechny značky vyskytující se v produktové databázi (pro detekci u názvů bez závorky). */
-    private val KNOWN_BRANDS = listOf(
-        // --- Víceslovné / překrývající se (musí být první) ---
-        "Coca-Cola", "Royal Crown", "RC Cola", "Dr Pepper", "Captain Morgan", "Havana Club",
-        "Jack Daniel's", "Johnnie Walker", "Jim Beam", "Maker's Mark", "Jose Cuervo", "Grand Marnier",
-        "Bombay Sapphire", "Fernet Stock", "Bohemia Sekt", "Bohemia Chips", "Pilsner Urquell",
-        "Zlatý Bažant", "Big Shock", "Red Bull", "Le & Co", "Kostelecké uzeniny", "Maso Polička",
-        "Vodňanské kuře", "Veselá Pastýřka", "Ryba Žilina", "Choceňská mlékárna", "Valašské Meziříčí",
-        "Zlaté Pole", "Babiččiny dobroty", "Prince Polo", "Studentská pečeť", "GAS Familia",
-        "Jan Becher", "Cukrovar Dobrovice", "Moulin de Valdonne", "Dobrá voda", "Karlova koruna",
-        "Billa Premium", "K-Classic", "Franz Josef", "Spišská borovička", "Bohemia",
-        // --- Nápoje, lihoviny, pivo ---
-        "Freeway", "Pepsi", "Kofola", "Sprite", "Fanta", "Schweppes", "Fever-Tree", "Mattoni",
-        "Magnesia", "Kozel", "Budvar", "Budweiser", "Gambrinus", "Radegast", "Corgoň", "Staropramen",
-        "Bulmers", "Strongbow", "Božkov", "Bacardi", "Appleton", "Gordon's", "Tanqueray", "Hendrick's",
-        "Beefeater", "Žufánek", "Absolut", "Smirnoff", "Stolichnaya", "Sobieski", "Jameson",
-        "Glenfiddich", "Sierra", "Olmeca", "Cointreau", "Malibu", "Aperol", "Campari", "Martini",
-        "Baileys", "Disaronno", "Amaretto", "Kahlúa", "Becherovka", "Jelínek", "Tatratea", "Limoncello",
-        "Chartreuse", "Jägermeister", "Sambuca", "Grappa", "Prosecco", "Moët", "Codorniu", "Pimm's",
-        "Midori", "Angostura", "Monin", "Semtex", "Birell", "Vinea", "Kubík", "Jupí", "Granini",
-        "Nestea", "Hello", "Toma", "Korunní", "Poděbradka", "Rajec", "Vincentka", "Relax", "Cappy",
-        "Tymbark", "Kubuś", "Żywiec", "Cisowianka", "Lech", "Monster", "Tiger", "Tyskie",
-        "Hanácká kyselka",
-        // --- Mléčné výrobky ---
-        "Madeta", "Olma", "Kunín", "Hollandia", "Milko", "Pribináček", "Pribina", "Lipánek", "Termix",
-        "Danone", "Galbani", "Rajo", "Sabi", "Liptov", "Lučina", "Žervé", "Krásno", "Tatra",
-        "President", "Hochland", "Kaserei", "Łaciate", "Mlekovita", "Piątnica", "Bakoma", "Zott",
-        "Pilos", "Savencia", "Lukana", "Sedlčanský",
-        // --- Maso a uzeniny ---
-        "Krahulík", "Steinhauser", "Váhala", "Kmotr", "Sokołów", "Tarczyński", "Krakus", "Morliny",
-        "Drobimex", "Animex", "Chodura", "Pikok", "Dulano", "Equus",
-        // --- Sladkosti a snacky ---
-        "Opavia", "Orion", "Sedita", "Figaro", "Milka", "Lindt", "Mondelez", "Kraft", "Storck",
-        "Ferrero", "Nutella", "Kinder", "Wedel", "Wawel", "Grześki", "Góralki", "Krówka", "Delicje",
-        "Marlenka", "Brumík", "BeBe", "Tatranky", "Fidorka", "Horalky", "Margot", "Kofila", "Lentilky",
-        "Lay's", "Pringles", "Doritos", "Mixit", "Tyrkys", "Lajkonik", "Toppo", "Nela",
-        "Ritter Sport", "Pufáček",
-        // --- Cereálie ---
-        "Nestlé", "Nestle", "Nescafé", "Kellogg's", "Emco", "Granko", "Nesquik", "Chocapic",
-        // --- Pantry / omáčky / oleje / koření ---
-        "Hamé", "Vitana", "Knorr", "Maggi", "Hellmann's", "Kikkoman", "Lagris", "Panzani", "Barilla",
-        "Adriana", "Zátkovy", "Mutti", "Giana", "Valfrutta", "Bonduelle", "Graal", "Pudliszki",
-        "Łowicz", "Winiary", "Kotlin", "Kupiec", "Lubella", "Sante", "Melvit", "Kamis", "Kujawski",
-        "Rama", "Flora", "Upfield", "Olivio", "Monini", "Mazzetti", "Sicilia", "Gustin", "Diamant",
-        "Solminerale", "Medokomerc", "Dr. Oetker", "Wasa", "Agricol", "Alima", "Alpro", "Kłodawska",
-        "Szymanowska", "Spak", "Społem", "Profi", "Natura",
-        // --- Pečivo ---
-        "Penam", "Odkolek", "Schulstad", "Bimbo", "Babiččina volba",
-        // --- Mražené ---
-        "Findus", "Frosta", "McCain", "Hortex", "Nowaco", "Prima",
-        // --- Káva / čaj ---
-        "Teekanne", "Lipton", "Jihlavanka", "Lavazza", "Jacobs",
-        // --- Obchodní řetězce / privátní značky ---
-        "Albert", "Tesco", "Lidl", "Billa", "Penny", "Biedronka", "MAKRO", "Agrofert",
-        // --- Ostatní ---
-        "Zonin", "Mderni"
-    )
 
     suspend fun fetchOpenFoodFactsProduct(barcode: String, isSlovak: Boolean): OpenFoodFactsProduct? = withContext(Dispatchers.IO) {
         val trimmedCode = barcode.trim()
         val localProduct = localEanDb[trimmedCode]
         if (localProduct != null) {
             val brand = localProduct.brand ?: extractBrandFromName(localProduct.name)
-            return@withContext localProduct.copy(
-                brand = brand,
-                sugars = estimateSugars(localProduct),
-                servingSizeG = estimateServing(localProduct)
-            )
+            return@withContext localProduct.copy(brand = brand)
         }
 
         val url = "https://world.openfoodfacts.org/api/v2/product/$trimmedCode.json"
@@ -1502,9 +923,7 @@ object StepInTechAiService {
                 val protein = nutriments?.optDouble("proteins_100g", 0.0) ?: 0.0
                 val carbs = nutriments?.optDouble("carbohydrates_100g", 0.0) ?: 0.0
                 val fat = nutriments?.optDouble("fat_100g", 0.0) ?: 0.0
-                val sugarsOff = nutriments?.optDouble("sugars_100g", -1.0) ?: -1.0
-                val servingOff = product.optString("serving_quantity").trim().toDoubleOrNull()?.toInt()
-
+                
                 val categoriesTags = product.optJSONArray("categories_tags")
                 var determinedCategory = "Fridge"
                 if (categoriesTags != null) {
@@ -1519,7 +938,7 @@ object StepInTechAiService {
                 val brandField = product.optString("brands").trim()
                 val brand = if (brandField.isNotEmpty() && brandField != "null") brandField else extractBrandFromName(name)
                 
-                val offProduct = OpenFoodFactsProduct(
+                OpenFoodFactsProduct(
                     barcode = barcode,
                     name = name,
                     calories = kcal.toInt(),
@@ -1527,13 +946,7 @@ object StepInTechAiService {
                     carbohydrates = carbs,
                     fat = fat,
                     category = determinedCategory,
-                    brand = brand,
-                    sugars = sugarsOff,
-                    servingSizeG = servingOff
-                )
-                offProduct.copy(
-                    sugars = estimateSugars(offProduct),
-                    servingSizeG = estimateServing(offProduct)
+                    brand = brand
                 )
             }
         } catch (e: Exception) {
@@ -1682,13 +1095,12 @@ object StepInTechAiService {
                     product_name = product.name,
                     brand = brandName,
                     weight_g = weightG,
-                    serving_size_g = estimateServing(product),
+                    serving_size_g = if (code == "8584004011115") 30 else null,
                     calories_per_100g = product.calories,
                     macronutrients = Macronutrients(
                         protein_g = product.protein,
                         carbohydrates_g = product.carbohydrates,
-                        fat_g = product.fat,
-                        sugar_g = estimateSugars(product)
+                        fat_g = product.fat
                     )
                 )
             }
@@ -1843,8 +1255,7 @@ data class ProductNutrients(
 data class Macronutrients(
     val protein_g: Double,
     val carbohydrates_g: Double,
-    val fat_g: Double,
-    val sugar_g: Double = 0.0
+    val fat_g: Double
 )
 
 data class ParsedItem(
@@ -1863,7 +1274,5 @@ data class OpenFoodFactsProduct(
     val carbohydrates: Double,
     val fat: Double,
     val category: String,
-    val brand: String? = null,
-    val sugars: Double = -1.0,        // g cukru na 100g; -1 = neuvedeno (dopočítá se heuristicky)
-    val servingSizeG: Int? = null     // doporučená porce v g/ml; null = dopočítá se podle typu
+    val brand: String? = null
 )

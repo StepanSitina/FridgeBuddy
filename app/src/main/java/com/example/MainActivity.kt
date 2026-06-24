@@ -157,6 +157,7 @@ class MainActivity : ComponentActivity() {
                     val pantryLabel = if (isSlovak) "Spíž" else "Spižírna"
                     val recipeLabel = if (isSlovak) "Recepty" else "Recepty"
                     val shoppingLabel = if (isSlovak) "Nákupy" else "Nákupy"
+                    val scannerLabel = if (isSlovak) "Skener" else "Skener"
 
                     ModalNavigationDrawer(
                         drawerState = drawerState,
@@ -298,7 +299,6 @@ class MainActivity : ComponentActivity() {
                                     ),
                                     modifier = Modifier.testTag("nav_shopping")
                                 )
-
                             }
                         }
                     ) { innerPadding ->
