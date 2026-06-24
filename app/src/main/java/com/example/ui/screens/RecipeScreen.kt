@@ -53,6 +53,7 @@ fun RecipeScreen(
     var filterVegan by remember { mutableStateOf(false) }
     var filterLactoseFree by remember { mutableStateOf(false) }
     var filterLowCarb by remember { mutableStateOf(false) }
+    var filterCanMakeFromPantry by remember { mutableStateOf(false) }
 
     var maxCaloriesLimit by remember { mutableStateOf<Int?>(null) } // null means no limit
     var filterHighProtein by remember { mutableStateOf(false) }
@@ -69,6 +70,7 @@ fun RecipeScreen(
     var selectedDrinkCategory by remember { mutableStateOf("vse") } // "vse", "Klasické koktejly", "Letní drinky", "Long drinky", "Shoty", "Zimní drinky"
 
     val hasActiveFilters = includeIngredients.isNotBlank() || excludeIngredients.isNotBlank() ||
+        filterCanMakeFromPantry ||
         (activeScreenTab != "alko" && (selectedMealCategory != "vse" || selectedOccasion != "vse" ||
         filterGlutenFree || filterVegetarian || filterVegan || filterLactoseFree || filterLowCarb ||
         maxCaloriesLimit != null || filterHighProtein ||
@@ -99,6 +101,17 @@ fun RecipeScreen(
         val descSK = r.instructionsSK.lowercase()
         val ingsCZ = r.ingredientsCZ.map { it.lowercase() }
         val ingsSK = r.ingredientsSK.map { it.lowercase() }
+
+        // "Mám doma" filter — zobrazí jen recepty kde pantry pokrývá alespoň 50% ingrediencí
+        if (filterCanMakeFromPantry && pantryNames.isNotEmpty()) {
+            val recipeIngs = (r.ingredientsCZ + r.ingredientsSK).map { it.lowercase() }
+            if (recipeIngs.isNotEmpty()) {
+                val covered = recipeIngs.count { ing ->
+                    pantryNames.any { p -> ing.contains(p) || p.contains(ing.take(4)) }
+                }
+                if (covered.toFloat() / recipeIngs.size < 0.5f) return@filter false
+            }
+        }
 
         if (includeIngredients.isNotBlank()) {
             val incParts = includeIngredients.trim().lowercase().split(",".toRegex())
@@ -513,6 +526,45 @@ fun RecipeScreen(
                     }
                 }
 
+                // "Mám doma" quick filter chip
+                if (pantryNames.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .padding(bottom = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        FilterChip(
+                            selected = filterCanMakeFromPantry,
+                            onClick = { filterCanMakeFromPantry = !filterCanMakeFromPantry },
+                            label = {
+                                Text(
+                                    text = if (isSlovak) "🧺 Mám doma" else "🧺 Mám doma",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            },
+                            leadingIcon = if (filterCanMakeFromPantry) ({
+                                Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
+                            }) else null,
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = FreshGreenPrimary,
+                                selectedLabelColor = Color.White,
+                                selectedLeadingIconColor = Color.White,
+                                containerColor = DarkSurface,
+                                labelColor = CreamText
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = filterCanMakeFromPantry,
+                                borderColor = BorderNatural,
+                                selectedBorderColor = FreshGreenPrimary
+                            )
+                        )
+                    }
+                }
+
                 // Collapsible Advanced Filters Panel
                 AnimatedVisibility(visible = showAdvancedFilters) {
                     Card(
@@ -562,6 +614,7 @@ fun RecipeScreen(
                                             selectedAlcoholType = "vse"
                                             selectedAlcoholStrength = "vse"
                                             selectedDrinkCategory = "vse"
+                                            filterCanMakeFromPantry = false
                                         },
                                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                                         colors = ButtonDefaults.textButtonColors(contentColor = FreshGreenPrimary)

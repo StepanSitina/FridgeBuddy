@@ -289,7 +289,311 @@ object LocalRecipesProvider {
             "Valašská káva se slivovicí|Valašská káva so slivovicou|alko",
             "Griotka s horkým jablečným džusem|Griotka s horúcim jablkovým džúsom|alko",
             "Karlovarská Colada s kokosem|Karlovarská Colada s kokosom|alko",
-            "Česká bloody mary s křenem|Česká krvavá mary s chrenom|alko"
+            "Česká bloody mary s křenem|Česká krvavá mary s chrenom|alko",
+
+            // --- Nové recepty (přidáno) ---
+            // Dezerty
+            "Jablečný závin s tvarohem|Jablkový závin s tvarohom|dezert",
+            "Čokoládový dort s tvarohovým krémem|Čokoládový dort s tvarohovým krémom|dezert",
+            "Borůvkový koláč s drobenkou|Borůvkový koláč s posýpkou|dezert",
+            "Jahodový dort s šlehačkou|Jahodový dort so šľahačkou|dezert",
+            "Meruňkový koláč z listového těsta|Marhuľový koláč z lístkového cesta|dezert",
+            "Švestkový koláč s mákem|Slivkový koláč s makom|dezert",
+            "Třešňová bublanina|Čerešňová bublanina|dezert",
+            "Karamelové rohlíčky s ořechy|Karamelové rožteky s orechmi|dezert",
+            "Makový závin s rozinkami|Makový závin s hrozienkami|dezert",
+            "Domácí čokoládové brownies|Domáce čokoládové brownies|dezert",
+            "Kokosové kuličky (raffaello variace)|Kokosové guľky|dezert",
+            "Citronový dort s vanilkovým krémem|Citrónový dort s vanilkovým krémom|dezert",
+            "Tvarohové pečené knedlíčky s trnkami|Tvarohové knedle s trnkami|dezert",
+            "Žloutkové cukroví|Žĺtkovné cukroví|dezert",
+            "Mandlové rohlíčky|Mandľové rohlíčky|dezert",
+            "Piškotové řezy s ovocem|Piškótové rezy s ovocím|dezert",
+            "Čokoládové košíčky s krémem|Čokoládové košíčky s krémom|dezert",
+            "Domácí šlehačkový dort|Domáci šľahačkový dort|dezert",
+            "Ovesné sušenky s čokoládou|Ovsené sušienky s čokoládou|dezert",
+            "Perníkové hvězdičky s cukrovou polevou|Perníkové hviezdičky s cukrovou polevou|dezert",
+
+            // Obědy
+            "Česnečka s opečeným chlebem|Cesnačka s opečeným chlebom|obed",
+            "Zeleninová polévka s krupicovými haluškami|Zeleninová polievka s krupicovými haluškami|obed",
+            "Kuřecí vývar s vermicelli|Kurací vývar s vermicelli|obed",
+            "Vepřový vývar s játrovými knedlíčky|Bravčový vývar s pečeňovými knedličkami|obed",
+            "Polévka z červené čočky s koriandrem|Polievka z červenej šošovice s koriandrom|obed",
+            "Avokádová polévka studená|Avokádová polievka studená|obed",
+            "Pečená paprika se sýrem v trojobalu|Pečená paprika so syrom v trojobale|obed",
+            "Zapékané těstoviny Bolognese|Zapekané cestoviny Bolognese|obed",
+            "Hovězí vývar s játrovými knedlíčky|Hovädzí vývar s pečeňovými knedličkami|obed",
+            "Krémová mrkvová polévka|Krémová mrkvová polievka|obed",
+
+            // Večeře
+            "Vaječný salát s tuňákem|Vajíčkový šalát s tuniakom|vecere",
+            "Zapékané brambory se slaninou|Zapekané zemiaky so slaninou|vecere",
+            "Cuketa s mletým masem v troubě|Cuketa s mletým mäsom v rúre|vecere",
+            "Těstovinový salát s fetou a olivami|Cestovinový šalát s fetou a olivami|vecere",
+            "Grilovaný hermelín s brusinkami|Grilovaný hermelín s brusnicami|vecere",
+            "Fazolový salát s kukuřicí|Fazuľový šalát s kukuricou|vecere",
+            "Rychlé rizoto se zeleninou|Rýchle rizoto so zeleninou|vecere",
+            "Pita chléb s gyrosem a tzatziki|Pita chlieb s gyrosom a tzatziki|vecere",
+            "Vajíčka Benedikt se šunkou|Vajíčka Benedikt so šunkou|vecere",
+            "Cuketové placky se zakysanou smetanou|Cuketové placky s kyslou smotanou|vecere",
+
+            // Nápoje
+            "Teplý skořicový čaj s jablkem|Teplý škoricový čaj s jablkom|piti",
+            "Ledový čaj s limetkou a bazalkou|Ľadový čaj s limetkou a bazalkou|piti",
+            "Meruňkový džus čerstvý|Marhuľový džús čerstvý|piti",
+            "Domácí limonáda s malinou|Domáca limonáda s malinou|piti",
+            "Švestkový sirup s vodou|Slivkový sirup s vodou|piti",
+            "Hrozinkový čaj s ořechy|Hrozienková voda s orechmi|piti",
+            "Kefírový nápoj s ovocem|Kefírový nápoj s ovocím|piti",
+            "Voda s okurkou a mátou|Voda s uhorkou a mätou|piti",
+
+            // === VEČEŘE — doplnění na 100+ ===
+            "Zapékaná vejce se špenátem a sýrem|Zapekané vajcia so špenátom a syrom|vecere",
+            "Cibulový koláč se slaninou|Cibuľový koláč so slaninou|vecere",
+            "Francouzský toast se šunkou a sýrem|Francúzsky toast so šunkou a syrom|vecere",
+            "Pikantní kuřecí quesadilla|Pikantná kuracie quesadilla|vecere",
+            "Těstovinový salát s rajčaty a bazalkou|Cestovinový šalát s rajčinami a bazalkou|vecere",
+            "Hummus s pita chlebem a zeleninou|Hummus s pita chlebom a zeleninou|vecere",
+            "Zapékaná cuketa s rajčaty a mozzarellou|Zapekaná cuketa s rajčinami a mozzarellou|vecere",
+            "Studená vepřová roláda s hořčicí|Studená bravčová roláda s horčicou|vecere",
+            "Polenta se sýrem a karamelizovanou cibulkou|Polenta so syrom a karamelizovanou cibuľkou|vecere",
+            "Vaječná omeleta se šunkou a paprikou|Vaječná omeleta so šunkou a paprikou|vecere",
+            "Zeleninové tempura s dipem|Zeleninová tempura s dipom|vecere",
+            "Rybičková pomazánka na tmavém chlebu|Rybičková nátierka na tmavom chlebe|vecere",
+            "Rychlá pizza z tortilly|Rýchla pizza z tortilly|vecere",
+            "Sýrová polévka s párkem|Syrová polievka s párkom|vecere",
+            "Smažené tofu s rýží a sójovou omáčkou|Vyprážané tofu s ryžou a sójovou omáčkou|vecere",
+            "Mrkvový salát s rozinkami a citronem|Mrkvový šalát s hrozienkami a citrónom|vecere",
+            "Zapékané brambory s nivou a pórkem|Zapekané zemiaky s nivou a pórom|vecere",
+            "Tvarohové palačinky se zakysanou smetanou|Tvarohové palacinky s kyslou smotanou|vecere",
+            "Čočkový salát s vejcem a hořčičnou zálivkou|Šošovicový šalát s vajcom a horčičnou zálievkou|vecere",
+            "Smaženice s chlebem a pažitkou|Praženica s chlebom a pažítkou|vecere",
+            "Studený hovězí steak s bylinkovým máslem|Studený hovädzí steak s bylinkovým maslom|vecere",
+            "Pórková polévka se smetanou|Pórová polievka so smotanou|vecere",
+            "Grillovaná cuketa s fetou a mátou|Grilovaná cuketa s fetou a mätou|vecere",
+            "Šunková pizza bageta|Šunková pizza bageta|vecere",
+            "Zapékané nudle se zeleninou a sýrem|Zapekané rezance so zeleninou a syrom|vecere",
+            "Krémová polévka z bílých fazolí|Krémová polievka z bielych fazúľ|vecere",
+            "Tuňákový salát s avokádem a okurkou|Tuniakový šalát s avokádom a uhorkou|vecere",
+
+            // === DEZERTY — doplnění na 100+ ===
+            "Tvarohový cheesecake s borůvkovou polevou|Tvarohový cheesecake s čučoriedkovou polevou|dezert",
+            "Čokoládové muffiny s čokoládovými kousky|Čokoládové muffiny s čokoládovými kúskami|dezert",
+            "Ovocný salát s medem a mátou|Ovocný šalát s medom a mätou|dezert",
+            "Klasický jablek crumble|Klasický jablkový crumble|dezert",
+            "Smetanový panna cotta s jahodami|Smotanová panna cotta s jahodami|dezert",
+            "Čokoládový fondant s vanilkovou zmrzlinou|Čokoládový fondant s vanilkovou zmrzlinou|dezert",
+            "Třešňové knedlíky z tvarohu|Čerešňové knedle z tvarohu|dezert",
+            "Banánový chléb s ořechy|Banánový chlieb s orechmi|dezert",
+            "Jahodová pěna se šlehačkou|Jahodová pena so šľahačkou|dezert",
+            "Rumové kuličky z perníku|Rumové guľky z perníka|dezert",
+            "Dortíčky s mascarpone a malinami|Tortičky s mascarpone a malinami|dezert",
+            "Meruňkové knedlíky z bramborového těsta|Marhuľové knedle zo zemiakového cesta|dezert",
+            "Tiramisu s kávou a amarettem|Tiramisu s kávou a amarettom|dezert",
+            "Kokoský dort s ananasem|Kokosový dort s ananásom|dezert",
+            "Ovesné vločky zapečené s jablkem|Ovsené vločky zapečené s jablkom|dezert",
+            "Svěží citronový cheesecake|Svieži citrónový cheesecake|dezert",
+            "Švestkové povidlové tašky|Slivkové lekvárniky|dezert",
+            "Ořechový závin s rozinkami|Orechový závin s hrozienkami|dezert",
+            "Čokoládová pěna s espressem|Čokoládová pena s espresmom|dezert",
+            "Pistáciové sušenky|Pistáciové sušienky|dezert",
+            "Amaretti sušenky s mandlemi|Amaretti sušienky s mandľami|dezert",
+            "Ovocný tart s vanilkovým krémem|Ovocný tart s vanilkovým krémom|dezert",
+            "Malinový sorbet|Malinový sorbet|dezert",
+            "Borůvkový muffin s citronovou kůrou|Čučoriedkový muffin s citrónovou kôrou|dezert",
+            "Pohankové palačinky s javorovým sirupem|Pohánkové palacinky s javorovým sirupom|dezert",
+            "Creme brulee s vanilkou|Creme brulee s vanilkou|dezert",
+            "Hruškový koláč s kardamomem|Hrušková koláč s kardamómom|dezert",
+            "Domácí karamelový pudink|Domáci karamelový pudink|dezert",
+            "Višňový koláč s mandlovou drobenkou|Višňový koláč s mandľovou posýpkou|dezert",
+            "Marlenka (medový dort se smetanou)|Marlenka (medový dort so smotanou)|dezert",
+            "Žloutkové věnečky s máslovou náplní|Žĺtkové venečky s maslovou náplňou|dezert",
+            "Čokoládové dortíčky s lískovými ořechy|Čokoládové tortičky s lieskovými orechmi|dezert",
+            "Kremžský řez s kokosem|Kremžský rez s kokosom|dezert",
+            "Slané sušenky s rozmarýnem a sýrem|Slané sušienky s rozmarínom a syrom|dezert",
+            "Domácí marshmallow|Domáce marshmallow|dezert",
+            "Fíkový džemový koláč|Figový džemový koláč|dezert",
+            "Třepený koláč s drobenkou a tvarohem|Sypkový koláč s posýpkou a tvarohom|dezert",
+            "Skořicové šneky|Škoricové šneky|dezert",
+            "Datlové kuličky s kešu|Datľové guľky s kešu|dezert",
+            "Maková roláda se švestkovým džemem|Maková roláda so slivkovým džemom|dezert",
+            "Crêpes Suzette s pomerančovým máslem|Crêpes Suzette s pomarančovým maslom|dezert",
+            "Domácí nanuky ze zmrazeného jogurtu|Domáce nanuky zo zmrazeného jogurtu|dezert",
+            "Sušenkový nepečený dort se šlehačkou|Nepečený sušienkový dort so šľahačkou|dezert",
+            "Tvarohová vánočka s rozinkami|Tvarohová vianočka s hrozienkami|dezert",
+            "Čokoládová poleva na dort (ganache)|Čokoládová poleva na dort (ganache)|dezert",
+            "Bezlepkový čokoládový dort|Bezlepkový čokoládový dort|dezert",
+            "Vegánský chia pudink s mangem|Vegánsky chia pudink s mangom|dezert",
+            "Kokosová zmrzlina domácí|Kokosová zmrzlina domáca|dezert",
+            "Pečené hrušky s medem a tvarohem|Pečené hrušky s medom a tvarohom|dezert",
+            "Horký čokoládový fondue|Horúce čokoládové fondue|dezert",
+            "Sněhová pěna s lesním ovocem|Snehová pena s lesným ovocím|dezert",
+            "Švestkové štrúdlíčky|Slivkové štrúdelky|dezert",
+            "Malé makronky s ganache|Malé makaróny s ganache|dezert",
+            "Tvarohový muffin s borůvkami|Tvarohový muffin s čučoriedkami|dezert",
+            "Domácí karamelky se slanými arašídy|Domáce karamelky so slanými arašidmi|dezert",
+            "Rýžový koláč z plného mléka|Ryžový koláč z plnotučného mlieka|dezert",
+            "Koláč opilá Anežka (rum, vlašáky, kakao)|Koláč opilá Anežka|dezert",
+            "Pečená jablka s ořechy a skořicí|Pečené jablká s orechmi a škoricou|dezert",
+            "Švestkový crumble s ovesnými vločkami|Slivkový crumble s ovsenenými vločkami|dezert",
+
+            // === NÁPOJE — doplnění na 100+ ===
+            "Mrkvový džus s imbírem a citronem|Mrkvový džús so zázvorom a citrónom|piti",
+            "Smoothie ze špenátu a banánu|Smoothie zo špenátu a banánu|piti",
+            "Čerstvý pomerančový džus|Čerstvý pomarančový džús|piti",
+            "Chai latte s mlékem|Chai latte s mliekom|piti",
+            "Peprmintový čaj s medem|Pepermintový čaj s medom|piti",
+            "Třešňový džus s citronem|Čerešňový džús s citrónom|piti",
+            "Zelené detox smoothie|Zelené detox smoothie|piti",
+            "Borůvkový milkshake|Čučoriedkový milkshake|piti",
+            "Energetická limonáda s citrusem|Energetická limonáda s citrusmi|piti",
+            "Horký med s citronem a zázvorem|Horúci med s citrónom a zázvorom|piti",
+            "Ledový kávový nápoj frappe|Ľadový kávový nápoj frappe|piti",
+            "Malinový koktejl bez alkoholu|Malinový kokteil bez alkoholu|piti",
+            "Dýňové latte s kořením|Tekvicové latte s korením|piti",
+            "Kopřivový čaj s medem|Žihľavový čaj s medom|piti",
+            "Mandlové mléko domácí|Mandľové mlieko domáce|piti",
+            "Ovesné mléko s vanilkou|Ovsené mlieko s vanilkou|piti",
+            "Fermentovaný kombucha nápoj|Fermentovaný kombucha nápoj|piti",
+            "Hvězdičkový anýzový čaj|Hviezdičkový anízový čaj|piti",
+            "Limonáda s bezinkovým sirupem a mátou|Limonáda s bazovým sirupom a mätou|piti",
+            "Avokádové smoothie s limetkou|Avokádové smoothie s limetkou|piti",
+            "Jahodový koktejl s kokosovým mlékem|Jahodový kokteil s kokosovým mliekom|piti",
+            "Hroznový džus domácí|Hroznový džús domáci|piti",
+            "Hřejivé mléko se skořicí a medem|Hrejivé mlieko so škoricou a medom|piti",
+            "Ledový matcha latte|Ľadové matcha latte|piti",
+            "Švestkový kompot teplý|Slivkový kompót teplý|piti",
+            "Domácí sirup z máty|Domáci sirup z mäty|piti",
+            "Mrkvovo-jablečný džus|Mrkvovo-jablkový džús|piti",
+            "Ovocný punč bez alkoholu|Ovocný punč bez alkoholu|piti",
+            "Ledový čaj s broskvovým džusem|Ľadový čaj s broskyňovým džúsom|piti",
+            "Kokosová voda s citrusem|Kokosová voda s citrusmi|piti",
+            "Smoothie s mango a ananasem|Smoothie s mangom a ananásom|piti",
+            "Voda s citronem a kurkumou|Voda s citrónom a kurkumou|piti",
+            "Šípkový sirup s vodou|Šípkový sirup s vodou|piti",
+            "Višňová limonáda se zázvorom|Višňová limonáda so zázvorom|piti",
+            "Bambucký čaj z rooibosu|Rooibos čaj s medom|piti",
+            "Smoothie z červené řepy a jablka|Smoothie z červenej repy a jablka|piti",
+            "Domácí kefír s ovocem|Domáci kefír s ovocím|piti",
+            "Teplý citronový čaj s kardamomem|Teplý citrónový čaj s kardamómom|piti",
+            "Ledové kakao s mlékem|Ľadové kakao s mliekom|piti",
+            "Mrkvové smoothie s pomerančem|Mrkvové smoothie s pomarančom|piti",
+            "Zelený čaj Sencha s citronem|Zelený čaj Sencha s citrónom|piti",
+            "Horký cidermošt s kořením|Horúci jablčný cider s korením|piti",
+            "Limonáda s levandulí a citronem|Limonáda s levanduľou a citrónom|piti",
+            "Jahodový džus čerstvý|Jahodový džús čerstvý|piti",
+            "Hruškový nektar domácí|Hruškový nektár domáci|piti",
+            "Smoothie s lesním ovocem a jogurtem|Smoothie s lesným ovocím a jogurtom|piti",
+            "Kokosový jogurtový koktejl|Kokosový jogurtový kokteil|piti",
+            "Ostružinová limonáda|Ostružinová limonáda|piti",
+            "Čaj z meduňky se zázvorem|Čaj z medovky so zázvorom|piti",
+            "Smetanový horký čaj s kardamomem|Smotanový horúci čaj s kardamómom|piti",
+            "Ledové cappuccino s mléčnou pěnou|Ľadové cappuccino s mliečnou penou|piti",
+            "Domácí horká čokoláda s chilli|Domáca horúca čokoláda s čili|piti",
+            "Mrkvový smoothie s kokosovým mlékem|Mrkvové smoothie s kokosovým mliekom|piti",
+            "Ovocná sodovka s džusem a sirupem|Ovocná sóda s džúsom a sirupom|piti",
+            "Banánový nápoj s arašídovým máslem|Banánový nápoj s arašidovým maslom|piti",
+            "Ledový koktejl z granátového jablka|Ľadový kokteil z granátového jablka|piti",
+            "Ananas a kokosový smoothie|Ananás a kokosové smoothie|piti",
+            "Domácí vínovka z bezinek|Domáca bazová šťava|piti",
+            "Guaranový energetický nápoj domácí|Guaranový energetický nápoj domáci|piti",
+            "Ledový citronový sok s tymiánem|Ľadový citrónový džús s tymiánom|piti",
+            "Zázvorový shot|Zázvorový shot|piti",
+            "Horký čaj Garam masala|Horúci čaj Garam masala|piti",
+            "Sójové mléko s vanilkou domácí|Sójové mlieko s vanilkou domáce|piti",
+            "Jablečný mošt horký se skořicí|Jablkový mušt horúci so škoricou|piti",
+            "Ovocné ledo s mátou a citrusy|Ovocný ľad s mätou a citrusmi|piti",
+            "Voda Detox s okurkou a máta a limetkou|Detox voda s uhorkou mätou a limetkou|piti",
+
+            // === ALKO — doplnění na 100+ ===
+            "Aperol Spritz klasický|Aperol Spritz klasický|alko",
+            "Cosmopolitan s vodkou a brusinkovou šťávou|Cosmopolitan s vodkou a brusnicovou šťavou|alko",
+            "Whisky Sour s citronem|Whisky Sour s citrónom|alko",
+            "Long Island Iced Tea|Long Island Iced Tea|alko",
+            "Pina Colada s ananasem|Pina Colada s ananásom|alko",
+            "Margarita na skále|Margarita na skalách|alko",
+            "Negroni s gin a Campari|Negroni s ginom a Campari|alko",
+            "Daiquiri jahodové|Daiquiri jahodové|alko",
+            "Old Fashioned s Bourbon whisky|Old Fashioned s Bourbon whisky|alko",
+            "Manhattan s vermoutem|Manhattan s vermútom|alko",
+            "Paloma s Tequila a grapefruitem|Paloma s Tequilou a grapefruitom|alko",
+            "Moscow Mule s vodkou a zázvorem|Moscow Mule s vodkou a zázvorom|alko",
+            "Bramble s ostružinovým likérem|Bramble s ostružinovým likérom|alko",
+            "Kir Royal s Prosecco a rybízem|Kir Royal s Proseccom a ríbezľou|alko",
+            "Spritz s Campari a sodou|Spritz s Campari a sódou|alko",
+            "French 75 s ginem a šampaňským|French 75 s ginom a šampanským|alko",
+            "Espresso Martini s vodkou a kávou|Espresso Martini s vodkou a kávou|alko",
+            "Dark and Stormy s rumem a zázvorem|Dark and Stormy s rumom a zázvorom|alko",
+            "Mai Tai s rumem a mandlovým likérem|Mai Tai s rumom a mandľovým likérom|alko",
+            "Tequila Sunrise s pomerančem|Tequila Sunrise s pomarančom|alko",
+            "Sex on the Beach s vodkou a pomerančem|Sex on the Beach s vodkou a pomarančom|alko",
+            "Harvey Wallbanger s vodkou a Galliano|Harvey Wallbanger s vodkou a Galliano|alko",
+            "Sidecar s koňakem a likérem Cointreau|Sidecar s koňakom a Cointreau|alko",
+            "Clover Club s ginem a malinami|Clover Club s ginom a malinami|alko",
+            "Singapore Sling s ginem a třešněmi|Singapore Sling s ginom a čerešňami|alko",
+            "Zombie s rumem a citrusem|Zombie s rumom a citrusmi|alko",
+            "Penicillin s whisky a zázvorem|Penicillin s whisky a zázvorom|alko",
+            "Amaretto Sour s citrónovou šťávou|Amaretto Sour s citrónovou šťavou|alko",
+            "Gin Fizz s ginem a sodou|Gin Fizz s ginom a sódou|alko",
+            "Tom Collins s ginem a citronem|Tom Collins s ginom a citrónom|alko",
+            "Aviation s ginem a fialkovým likérem|Aviation s ginom a fialkovým likérom|alko",
+            "Last Word s ginem a Chartreuse|Last Word s ginom a Chartreuse|alko",
+            "Southside s ginem a mátou|Southside s ginom a mätou|alko",
+            "Paper Plane s Aperol a Bourbon|Paper Plane s Aperolom a Bourbonom|alko",
+            "Jungle Bird s rumem a Campari|Jungle Bird s rumom a Campari|alko",
+            "Rum Punch s citrusem a grenadinou|Rum Punch s citrusmi a grenadínou|alko",
+            "Blue Lagoon s vodkou a Blue Curacao|Blue Lagoon s vodkou a Blue Curacao|alko",
+            "Frozen Margarita s limetkou|Frozen Margarita s limetkou|alko",
+            "Mojito Ananas s ananasem a mátou|Mojito Ananas s ananásom a mätou|alko",
+            "Vodka Cranberry|Vodka Cranberry|alko",
+            "Rum Old Fashioned|Rum Old Fashioned|alko",
+            "Whisky Mac s ginger winem|Whisky Mac s ginger winom|alko",
+            "Lynchburg Lemonade s Jack Daniels|Lynchburg Lemonade s Jack Danielsom|alko",
+            "Sloe Gin Fizz|Sloe Gin Fizz|alko",
+            "Kofola s Becherovkou a limetkou|Kofola s Becherovkou a limetkou|alko",
+            "Slivovicový sour s citronem|Slivovicový sour s citrónom|alko",
+            "Hruškový cider on the rocks|Hruškovný cider on the rocks|alko",
+            "Červené víno sangria s ovocem|Červené víno sangria s ovocím|alko",
+            "Bílá sangria s prosecco a broskvemi|Biela sangria s proseccom a broskyňami|alko",
+            "Glintwein horký s citronem a hřebíčkem|Glintvein horúci s citrónom a klinčekmi|alko",
+            "Svařák s červeným vínem a kořením|Zvárené víno s červeným vínom a korením|alko",
+            "Becherovka na ledu|Becherovka na ľade|alko",
+            "Fernet Branca s colou|Fernet Branca s colou|alko",
+            "Jägermeister s energy drinkem|Jägermeister s energy drinkom|alko",
+            "Zlatá tequila shot se solí a limetkou|Zlatá tequila shot so soľou a limetkou|alko",
+            "Vodka Lemon Drop s cukrovým lemem|Vodka Lemon Drop s cukrovým okrajom|alko",
+            "Rum Coconut s kokosovým mlékem|Rum Coconut s kokosovým mliekom|alko",
+            "Irish Coffee s irskou whisky a smetanou|Irish Coffee s írskou whisky a smotanou|alko",
+            "Baileys na ledu|Baileys na ľade|alko",
+            "Frangelico s espressem a ledem|Frangelico s espresmom a ľadom|alko",
+            "Gin and Juice s grapefruitem|Gin and Juice s grapefruitom|alko",
+            "Vodka Mule s zázvorem a limetkou|Vodka Mule so zázvorom a limetkou|alko",
+            "Jablečný Calvados s tonick vodou|Jablkový Calvados s tonic vodou|alko",
+            "Třešňový Kirsch s sodou|Čerešňový Kirsch so sódou|alko",
+            "Bitter Lemon s ginem|Bitter Lemon s ginom|alko",
+            "Rum Sour s limetkou a třtinovým cukrem|Rum Sour s limetkou a trstinovým cukrom|alko",
+            "Whisky Ginger s kanadskou whisky|Whisky Ginger s kanadskou whisky|alko",
+            "Palinka s teplou vodou|Pálinka s teplou vodou|alko",
+            "Sambuca s kávovými zrny|Sambuca s kávovými zrnkami|alko",
+            "Grappa on the rocks|Grappa on the rocks|alko",
+            "Prosecco s jahodovým coulis|Prosecco s jahodovým coulis|alko",
+            "Šampaňský koktejl s Angostura bitter|Šampanský kokteil s Angostura bitter|alko",
+            "Cava Spritz s citrusem|Cava Spritz s citrusmi|alko",
+            "Radler s pivem a citronem|Radler s pivom a citrónom|alko",
+            "Shandy s pivem a limonádou|Shandy s pivom a limonádou|alko",
+            "Pivní koktejl Michelada|Pivný kokteil Michelada|alko",
+            "Absinth Drip s ledovou vodou|Absinth Drip s ľadovou vodou|alko",
+            "Midori Sour se zeleným melounem|Midori Sour so zeleným melónom|alko",
+            "Cointreau Fizz s pomerančem|Cointreau Fizz s pomarančom|alko",
+            "Chartreuse Swizzle|Chartreuse Swizzle|alko",
+            "Green Fairy s absintem|Green Fairy s absentom|alko",
+            "Vodka Gimlet s limetkou|Vodka Gimlet s limetkou|alko",
+            "Mezcal Negroni|Mezcal Negroni|alko",
+            "Rum Flip s vejcem|Rum Flip s vajcom|alko",
+            "Pimm's Cup s okurkou|Pimm's Cup s uhorkou|alko",
+            "Rye Whiskey Sour|Rye Whiskey Sour|alko",
+            "Elderflower Spritz s bezinkovým sirupem|Elderflower Spritz s bazovým sirupom|alko"
         )
 
         val standardRecipes = rawData.map { line ->
@@ -801,6 +1105,47 @@ object LocalRecipesProvider {
             val instructionsCZ = getCustomInstructionsCZ(czTitle, category, ingredientsCZ)
             val instructionsSK = getCustomInstructionsSK(skTitle, category, ingredientsSK)
 
+            if (czTitle.contains("Rybízový koláč") || czTitle.contains("rybízový koláč")) {
+                return@map FeaturedRecipe(
+                    "Rybízový koláč s drobenkou", "Ríbezľový koláč s posýpkou", "50 min", 310, "5g", "52g", "10g",
+                    listOf("250g hladké mouky", "150g černého nebo červeného rybízu", "120g másla", "150g cukru krupice", "2 ks vajec", "100ml mléka", "1 sáček kypřicího prášku", "šťáva z půl citronu", "100g drobenky (mouka, cukr, máslo)"),
+                    listOf("250g hladkej múky", "150g čiernych alebo červených ríbezlí", "120g masla", "150g krupicového cukru", "2 ks vajec", "100ml mlieka", "1 vrecúško kypriaceho prášku", "šťava z pol citróna", "100g posýpky"),
+                    false, false, true,
+                    "1. Rybíz omyjte, oklepejte ze stonků a promíchejte s lžící cukru a citronovou šťávou. Odložte stranou.\n" +
+                    "2. Máslo změklé při pokojové teplotě utřete s cukrem do pěny. Postupně přidávejte vejce a za stálého míchání vmíchejte mléko.\n" +
+                    "3. Prosejte mouku s kypřicím práškem a lehce zapracujte do těsta vařečkou (nemíchejte přespříliš, koláč by byl tuhý).\n" +
+                    "4. Těsto nalijte do máslem a moukou vysypané kulaté formy (průměr 26 cm). Rovnoměrně rozložte rybíz po povrchu a lehce ho vmáčkněte.\n" +
+                    "5. Připravte drobenku: prsty smíchejte mouku, cukr a na drobky nakrájené studené máslo. Posypte drobenkou celý koláč.\n" +
+                    "6. Pečte v předehřáté troubě na 180 °C po dobu 30–35 minut, dokud drobenka nezezlátne. Nechte 10 minut vychladnout ve formě před krájením.",
+                    "1. Ríbezle omyte, zmiešajte s lyžicou cukru a šťavou citróna.\n" +
+                    "2. Zmäknuté maslo rozšľahajte s cukrom, postupne pridávajte vajcia a mlieko.\n" +
+                    "3. Vmúchajte múku s kypriacim práškom.\n" +
+                    "4. Nalejte do vymastenej formy, rozdeľte ríbezle po povrchu.\n" +
+                    "5. Posypte posýpkou (múka, cukor, maslo).\n" +
+                    "6. Pečte na 180 °C 30–35 minút dozlatista.",
+                    22.0, "dezert"
+                )
+            }
+
+            if (czTitle.contains("Borůvkový koláč") || czTitle.contains("Jahodový dort") || czTitle.contains("Meruňkový koláč") || czTitle.contains("Švestkový koláč") || czTitle.contains("Třešňová bublanina")) {
+                val fruit = when {
+                    czTitle.contains("Borůvk") -> Triple("borůvky", "borůvky čerstvé nebo zmrazené", "čučoriedky")
+                    czTitle.contains("Jahod") -> Triple("jahody", "čerstvé jahody", "jahody čerstvé")
+                    czTitle.contains("Meruňk") -> Triple("meruňky", "meruňky čerstvé nebo konzervované", "marhule")
+                    czTitle.contains("Švestk") -> Triple("švestky", "švestky bez pecky", "slivky")
+                    else -> Triple("třešně", "třešně bez pecky", "čerešne")
+                }
+                return@map FeaturedRecipe(
+                    czTitle, skTitle, "45 min", 290, "5g", "46g", "10g",
+                    listOf("250g hladké mouky", "200g ${fruit.second}", "100g másla", "130g cukru", "3 ks vajec", "80ml mléka", "1 sáček kypřicího prášku", "špetka soli", "moučkový cukr na posypání"),
+                    listOf("250g hladkej múky", "200g ${fruit.third}", "100g masla", "130g cukru", "3 ks vajec", "80ml mlieka", "1 vrecúško kypriaceho prášku", "soľ", "práškový cukor"),
+                    false, false, true,
+                    "1. Máslo s cukrem utřete do krémova. Přidávejte vejce jedno po druhém za stálého šlehání. Vmíchejte mléko.\n2. Prosejte mouku s kypřicím práškem a špetkou soli, lehce zapracujte do těsta.\n3. Těsto nalijte do vymazané formy, navrch rozložte ${fruit.first}.\n4. Pečte v předehřáté troubě na 180 °C po dobu 30–35 minut, dokud dřívko zapíchnuté do středu nevyjde čisté.\n5. Nechte vychladnout, poprašte moučkovým cukrem.",
+                    "1. Maslo s cukrom rozšľahajte, postupne pridávajte vajcia. Vmúchajte mlieko.\n2. Presejte múku s kypriacim práškom, zamiešajte do cesta.\n3. Cesto nalejte do vymastenej formy, navrch rozložte ${fruit.third}.\n4. Pečte na 180 °C 30–35 minút.\n5. Vychlaďte a posypte práškovým cukrom.",
+                    20.0, "dezert"
+                )
+            }
+
             val basePrice = when {
                 czTitle.contains("hovězí") || czTitle.contains("vepřové") || czTitle.contains("pstruh") || czTitle.contains("sumec") || czTitle.contains("steak") -> 62.0
                 category == "piti" -> 16.0
@@ -968,7 +1313,12 @@ object LocalRecipesProvider {
         if (t.contains("krůtí")) list.add("krůtí maso")
         if (t.contains("kachna") || t.contains("kachní")) list.add("kachní maso")
         if (t.contains("husa") || t.contains("husí")) list.add("husí maso")
-        if (t.contains("ryb") || t.contains("kapr") || t.contains("pstruh") || t.contains("sumec") || t.contains("candát") || t.contains("filé")) {
+        // "rybíz" = rybíz (currant fruit) — musíme vyloučit, jinak dostane "ryby" do koláče
+        val isActualFish = (t.contains("ryba") || t.contains("ryby") || t.contains("rybí") ||
+            t.contains("kapr") || t.contains("pstruh") || t.contains("sumec") || t.contains("candát") ||
+            t.contains("filé") || t.contains("losos") || t.contains("tresk") || t.contains("tuňák")) &&
+            !t.contains("rybíz") && !t.contains("rybiz")
+        if (isActualFish) {
             list.add("ryby")
             list.add("citron")
         }
@@ -1011,7 +1361,7 @@ object LocalRecipesProvider {
         
         // 3. Desserts, beverages vs savory staples
         val isDrink = t.contains("čaj") || t.contains("káva") || t.contains("limonáda") || t.contains("džus") || t.contains("mošt") || t.contains("mojito") || t.contains("koktejl") || t.contains("smoothie") || t.contains("piti") || t.contains("alko") || t.contains("sour") || t.contains("colada") || t.contains("griotka")
-        val isDessert = t.contains("bábovka") || t.contains("závin") || t.contains("štrúdl") || t.contains("koláč") || t.contains("perník") || t.contains("buchty") || t.contains("větrník") || t.contains("dort") || t.contains("sladk") || t.contains("laskonky") || t.contains("palačink") || t.contains("kaše") || t.contains("lívanc") || t.contains("vafle") || t.contains("věnečky") || t.contains("dezert") || t.contains("buchty") || t.contains("brioška") || t.contains("pudink")
+        val isDessert = t.contains("bábovka") || t.contains("závin") || t.contains("štrúdl") || t.contains("koláč") || t.contains("perník") || t.contains("buchty") || t.contains("větrník") || t.contains("dort") || t.contains("sladk") || t.contains("laskonky") || t.contains("palačink") || t.contains("kaše") || t.contains("lívanc") || t.contains("vafle") || t.contains("věnečky") || t.contains("dezert") || t.contains("buchty") || t.contains("brioška") || t.contains("pudink") || t.contains("rybíz") || t.contains("borůvk") || t.contains("jahod") || t.contains("třešň") || t.contains("slivka") || t.contains("meruňk") || t.contains("švestk") || t.contains("bublanin")
         
         if (isDrink) {
             if (t.contains("čaj")) list.add("černý čaj")
@@ -1033,6 +1383,15 @@ object LocalRecipesProvider {
             list.add("máslo")
             if (t.contains("mák")) list.add("mletý mák")
             if (t.contains("jablk") || t.contains("štrúdl") || t.contains("závin")) list.add("čerstvá jablka")
+            if (t.contains("rybíz") || t.contains("rybiz")) list.add("černý rybíz")
+            if (t.contains("borůvk")) list.add("borůvky")
+            if (t.contains("jahod")) list.add("jahody")
+            if (t.contains("třešň")) list.add("třešně")
+            if (t.contains("meruňk")) list.add("meruňky")
+            if (t.contains("švestk") || t.contains("slivka")) list.add("švestky")
+            if (t.contains("tvaroh")) list.add("měkký tvaroh")
+            if (t.contains("čokolád")) list.add("čokoláda")
+            if (t.contains("ořech") || t.contains("vlašsk")) list.add("vlašské ořechy")
         } else {
             // General Savory Meals
             list.add("sůl")
@@ -1090,7 +1449,11 @@ object LocalRecipesProvider {
         if (t.contains("morč")) list.add("morčacie mäso")
         if (t.contains("kač")) list.add("kačacie mäso")
         if (t.contains("hus")) list.add("husacie mäso")
-        if (t.contains("ryb") || t.contains("kapor") || t.contains("pstruh") || t.contains("sumec") || t.contains("zubáč") || t.contains("filé")) {
+        val isActualFishSK = (t.contains("ryba") || t.contains("ryby") || t.contains("rybí") ||
+            t.contains("kapor") || t.contains("pstruh") || t.contains("sumec") || t.contains("zubáč") ||
+            t.contains("filé") || t.contains("losos") || t.contains("treska")) &&
+            !t.contains("rybíz") && !t.contains("ríbez") && !t.contains("ribez")
+        if (isActualFishSK) {
             list.add("ryby")
             list.add("citrón")
         }

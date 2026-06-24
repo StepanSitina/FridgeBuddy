@@ -127,6 +127,9 @@ fun PantryScreen(
     var scannedFoodProtein by remember { mutableStateOf("5g") }
     var scannedFoodCarbs by remember { mutableStateOf("12g") }
     var scannedFoodFat by remember { mutableStateOf("2g") }
+    var scannedFoodSugar by remember { mutableStateOf("0g") }
+    var scannedFoodServing by remember { mutableStateOf("100g") }
+    var scannedFoodBrand by remember { mutableStateOf("") }
     var scannedFoodCategory by remember { mutableStateOf("Fridge") }
     var scannedFoodPrice by remember { mutableStateOf(35.0) }
     var scannedFoodEmoji by remember { mutableStateOf("🍏") }
@@ -629,112 +632,389 @@ fun PantryScreen(
             )
         }
 
-        // --- Manual Add Item Dialog Dialog ---
+        // --- Manual Add Item Dialog ---
         if (showAddItemDialog) {
-            Dialog(onDismissRequest = { showAddItemDialog = false }) {
+            // Canonical ingredient names that match recipe keywords exactly
+            val commonIngredients = remember {
+                listOf(
+                    "Mléko", "Máslo", "Vejce", "Cibule", "Česnek", "Sůl", "Pepř",
+                    "Hladká mouka", "Polohrubá mouka", "Cukr", "Moučkový cukr",
+                    "Smetana na vaření", "Zakysaná smetana", "Šlehačka",
+                    "Tvaroh", "Sýr Eidam", "Hermelín", "Bryndza", "Parmazán",
+                    "Brambory", "Rýže", "Těstoviny", "Špagety",
+                    "Kuřecí maso", "Vepřové maso", "Hovězí maso", "Mleté maso",
+                    "Šunka", "Salám", "Slanina", "Klobása", "Párek",
+                    "Mrkev", "Celer", "Petržel", "Rajčata", "Paprika", "Brokolice",
+                    "Špenát", "Cuketa", "Dýně", "Hrášek", "Kukuřice", "Fazole",
+                    "Houby", "Žampiony", "Hříbky",
+                    "Jogurt", "Kefír", "Podmáslí",
+                    "Ocet", "Slunečnicový olej", "Olivový olej",
+                    "Hořčice", "Kečup", "Majonéza",
+                    "Citron", "Jablka", "Banán", "Borůvky", "Jahody",
+                    "Vlašské ořechy", "Mandle", "Rozinky",
+                    "Mletá paprika", "Kmín", "Majoránka", "Tymián", "Bazalka",
+                    "Droždí", "Kypřicí prášek", "Vanilkový cukr", "Kakao",
+                    "Čokoláda", "Džem", "Med", "Sádlo"
+                )
+            }
+
+            var nameSuggestions by remember { mutableStateOf(emptyList<String>()) }
+
+            // Quick-add chips organized by category
+            val quickAddGroups = remember {
+                listOf(
+                    "🥛 Mléčné" to listOf("Mléko", "Máslo", "Vejce", "Tvaroh", "Smetana na vaření", "Jogurt"),
+                    "🥩 Maso" to listOf("Kuřecí maso", "Vepřové maso", "Hovězí maso", "Šunka", "Salám", "Mleté maso"),
+                    "🥔 Základ" to listOf("Brambory", "Cibule", "Česnek", "Rýže", "Těstoviny", "Hladká mouka"),
+                    "🌿 Koření" to listOf("Sůl", "Pepř", "Cukr", "Mletá paprika", "Kmín", "Majoránka"),
+                    "🫙 Ostatní" to listOf("Olej", "Ocet", "Kečup", "Hořčice", "Droždí", "Kypřicí prášek")
+                )
+            }
+            var activeQuickGroup by remember { mutableStateOf(0) }
+
+            Dialog(onDismissRequest = {
+                showAddItemDialog = false
+                manualName = ""
+                nameSuggestions = emptyList()
+            }) {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = DarkSurface),
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.padding(16.dp)
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
                 ) {
                     Column(
                         modifier = Modifier
-                            .padding(16.dp)
+                            .padding(20.dp)
                             .verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        Text(
-                            text = if (isSlovak) "Pridať potravinu manuálne" else "Přidat potravinu manuálně",
-                            color = Color.White,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-
-                        OutlinedTextField(
-                            value = manualName,
-                            onValueChange = { manualName = it },
-                            label = { Text(if (isSlovak) "Názov (napr. Maslo)" else "Název (např. Máslo)") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        OutlinedTextField(
-                            value = manualQty,
-                            onValueChange = { manualQty = it },
-                            label = { Text(if (isSlovak) "Množstvo (napr. 250g)" else "Množství (např. 250g)") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        Text(
-                            text = if (isSlovak) "Umiestnenie (Kategória):" else "Umístění (Kategorie):",
-                            color = CreamText,
-                            fontSize = 12.sp
-                        )
-
+                        // Header
                         Row(
                             modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (isSlovak) "Pridať potravinu" else "Přidat potravinu",
+                                color = FreshGreenPrimary,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            IconButton(onClick = { showAddItemDialog = false; manualName = "" }) {
+                                Icon(Icons.Default.Close, contentDescription = null, tint = CaptionTextNatural)
+                            }
+                        }
+
+                        // --- QUICK ADD CHIPS ---
+                        Text(
+                            text = if (isSlovak) "⚡ Rýchle pridanie" else "⚡ Rychlé přidání",
+                            color = CreamText,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        // Group selector tabs
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            val cats = listOf("Fridge", "Freezer", "Pantry")
-                            cats.forEach { c ->
-                                val label = when (c) {
-                                    "Fridge" -> categoryLabelFridge
-                                    "Freezer" -> categoryLabelFreezer
-                                    else -> categoryLabelPantry
-                                }
-                                Button(
-                                    onClick = { manualCat = c },
-                                    colors = ButtonDefaults.buttonColors(containerColor = if (manualCat == c) FreshGreenPrimary else DarkBg),
-                                    modifier = Modifier.weight(1f).height(32.dp),
-                                    contentPadding = PaddingValues(0.dp)
+                            quickAddGroups.forEachIndexed { idx, (groupName, _) ->
+                                val selected = activeQuickGroup == idx
+                                Surface(
+                                    shape = RoundedCornerShape(20.dp),
+                                    color = if (selected) FreshGreenPrimary else DarkBg,
+                                    modifier = Modifier.clickable { activeQuickGroup = idx }
                                 ) {
-                                    Text(label, fontSize = 10.sp)
+                                    Text(
+                                        text = groupName,
+                                        fontSize = 11.sp,
+                                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (selected) Color.Black else CaptionTextNatural,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                    )
+                                }
+                            }
+                        }
+                        // Ingredient chips for selected group
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            quickAddGroups[activeQuickGroup].second.forEach { ingredient ->
+                                val alreadyInPantry = pantryItems.any { it.name.equals(ingredient, ignoreCase = true) }
+                                Surface(
+                                    shape = RoundedCornerShape(20.dp),
+                                    color = if (alreadyInPantry) SoftGreenGlow else NavBgNatural,
+                                    border = BorderStroke(
+                                        1.dp,
+                                        if (alreadyInPantry) FreshGreenPrimary else BorderNatural
+                                    ),
+                                    modifier = Modifier.clickable {
+                                        // Instant add with sensible defaults
+                                        val defaultDays = when (manualCat) {
+                                            "Freezer" -> 365
+                                            "Pantry" -> 90
+                                            else -> 7
+                                        }
+                                        viewModel.addManualPantryItem(
+                                            ingredient, "1 ks", manualCat, defaultDays, 0.0
+                                        )
+                                    }
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                    ) {
+                                        if (alreadyInPantry) {
+                                            Icon(
+                                                Icons.Default.Check,
+                                                contentDescription = null,
+                                                tint = FreshGreenPrimary,
+                                                modifier = Modifier.size(12.dp)
+                                            )
+                                            Spacer(Modifier.width(4.dp))
+                                        }
+                                        Text(
+                                            text = ingredient,
+                                            fontSize = 12.sp,
+                                            color = if (alreadyInPantry) FreshGreenPrimary else CreamText
+                                        )
+                                    }
                                 }
                             }
                         }
 
-                        OutlinedTextField(
-                            value = manualExpDays,
-                            onValueChange = { manualExpDays = it },
-                            label = { Text(if (isSlovak) "Dni expirácie odteraz" else "Dny expirace odteď") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                        HorizontalDivider(color = BorderNatural)
 
-                        OutlinedTextField(
-                            value = manualPrice,
-                            onValueChange = { manualPrice = it },
-                            label = { Text(if (isSlovak) "Odhad ceny" else "Odhad ceny") },
-                            modifier = Modifier.fillMaxWidth()
+                        // --- NAME FIELD WITH AUTOCOMPLETE ---
+                        Text(
+                            text = if (isSlovak) "Alebo zadajte vlastný názov:" else "Nebo zadejte vlastní název:",
+                            color = CaptionTextNatural,
+                            fontSize = 11.sp
                         )
+                        Column {
+                            OutlinedTextField(
+                                value = manualName,
+                                onValueChange = { v ->
+                                    manualName = v
+                                    nameSuggestions = if (v.length >= 2) {
+                                        commonIngredients.filter {
+                                            it.lowercase().contains(v.lowercase())
+                                        }.take(5)
+                                    } else emptyList()
+                                },
+                                label = { Text(if (isSlovak) "Název (např. Máslo)" else "Název (např. Máslo)", fontSize = 12.sp) },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Edit, contentDescription = null, tint = FreshGreenPrimary, modifier = Modifier.size(18.dp))
+                                },
+                                trailingIcon = {
+                                    if (manualName.isNotEmpty()) {
+                                        IconButton(onClick = { manualName = ""; nameSuggestions = emptyList() }) {
+                                            Icon(Icons.Default.Close, contentDescription = null, tint = CaptionTextNatural, modifier = Modifier.size(16.dp))
+                                        }
+                                    }
+                                },
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedTextColor = CreamText,
+                                    unfocusedTextColor = CreamText,
+                                    focusedBorderColor = FreshGreenPrimary,
+                                    unfocusedBorderColor = BorderNatural,
+                                    focusedContainerColor = DarkBg,
+                                    unfocusedContainerColor = DarkBg,
+                                    focusedLabelColor = FreshGreenPrimary,
+                                    unfocusedLabelColor = CaptionTextNatural
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            // Autocomplete dropdown
+                            if (nameSuggestions.isNotEmpty()) {
+                                Card(
+                                    colors = CardDefaults.cardColors(containerColor = DarkBg),
+                                    shape = RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp),
+                                    border = BorderStroke(1.dp, FreshGreenPrimary.copy(alpha = 0.4f)),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    nameSuggestions.forEach { suggestion ->
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    manualName = suggestion
+                                                    nameSuggestions = emptyList()
+                                                }
+                                                .padding(horizontal = 16.dp, vertical = 10.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Search,
+                                                contentDescription = null,
+                                                tint = FreshGreenPrimary,
+                                                modifier = Modifier.size(14.dp)
+                                            )
+                                            Text(suggestion, color = CreamText, fontSize = 13.sp)
+                                        }
+                                        HorizontalDivider(color = BorderNatural, thickness = 0.5.dp)
+                                    }
+                                }
+                            }
+                        }
 
+                        // --- QUANTITY PRESETS ---
+                        Text(
+                            text = if (isSlovak) "Množstvo:" else "Množství:",
+                            color = CreamText,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            listOf("1 ks", "2 ks", "250g", "500g", "1 kg", "1 l", "0.5 l").forEach { preset ->
+                                val sel = manualQty == preset
+                                Surface(
+                                    shape = RoundedCornerShape(20.dp),
+                                    color = if (sel) FreshGreenPrimary else DarkBg,
+                                    border = BorderStroke(1.dp, if (sel) FreshGreenPrimary else BorderNatural),
+                                    modifier = Modifier.clickable { manualQty = preset }
+                                ) {
+                                    Text(
+                                        text = preset,
+                                        fontSize = 12.sp,
+                                        fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (sel) Color.Black else CreamText,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        // --- LOCATION ---
+                        Text(
+                            text = if (isSlovak) "Umiestnenie:" else "Umístění:",
+                            color = CreamText,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            OutlinedButton(
-                                onClick = { showAddItemDialog = false },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text("Zrušit", color = CreamText)
+                            val cats = listOf(
+                                "Fridge" to "🧊 ${categoryLabelFridge}",
+                                "Freezer" to "❄️ ${categoryLabelFreezer}",
+                                "Pantry" to "🏠 ${categoryLabelPantry}"
+                            )
+                            cats.forEach { (c, label) ->
+                                val sel = manualCat == c
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = if (sel) FreshGreenPrimary else DarkBg,
+                                    border = BorderStroke(1.dp, if (sel) FreshGreenPrimary else BorderNatural),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable {
+                                            manualCat = c
+                                            // Auto-adjust expiry when switching to/from Freezer
+                                            manualExpDays = when (c) {
+                                                "Freezer" -> "365"
+                                                "Pantry" -> "90"
+                                                else -> "7"
+                                            }
+                                        }
+                                ) {
+                                    Text(
+                                        text = label,
+                                        fontSize = 11.sp,
+                                        fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (sel) Color.Black else CreamText,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.padding(vertical = 8.dp)
+                                    )
+                                }
                             }
-                            Button(
-                                onClick = {
-                                    if (manualName.isNotBlank()) {
-                                        viewModel.addManualPantryItem(
-                                            manualName,
-                                            manualQty,
-                                            manualCat,
-                                            manualExpDays.toIntOrNull() ?: 5,
-                                            manualPrice.toDoubleOrNull() ?: 0.0
-                                        )
-                                        manualName = ""
-                                        showAddItemDialog = false
-                                    }
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = FreshGreenPrimary),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text("Uložit")
+                        }
+
+                        // --- EXPIRY PRESETS ---
+                        Text(
+                            text = if (isSlovak) "Expirace:" else "Expirace:",
+                            color = CreamText,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            val expiryPresets = listOf(
+                                "3" to if (isSlovak) "3 dni" else "3 dny",
+                                "7" to if (isSlovak) "1 týždeň" else "1 týden",
+                                "14" to if (isSlovak) "2 týždne" else "2 týdny",
+                                "30" to if (isSlovak) "1 mesiac" else "1 měsíc",
+                                "90" to if (isSlovak) "3 mesiace" else "3 měsíce",
+                                "365" to if (isSlovak) "1 rok" else "1 rok"
+                            )
+                            expiryPresets.forEach { (days, label) ->
+                                val sel = manualExpDays == days
+                                Surface(
+                                    shape = RoundedCornerShape(20.dp),
+                                    color = if (sel) SaffronGoldSecondary else DarkBg,
+                                    border = BorderStroke(1.dp, if (sel) SaffronGoldSecondary else BorderNatural),
+                                    modifier = Modifier.clickable { manualExpDays = days }
+                                ) {
+                                    Text(
+                                        text = label,
+                                        fontSize = 11.sp,
+                                        fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (sel) Color.Black else CreamText,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                    )
+                                }
                             }
+                        }
+
+                        // --- SAVE BUTTON ---
+                        Button(
+                            onClick = {
+                                val name = manualName.ifBlank { null }
+                                if (name != null) {
+                                    viewModel.addManualPantryItem(
+                                        name,
+                                        manualQty,
+                                        manualCat,
+                                        manualExpDays.toIntOrNull() ?: 7,
+                                        manualPrice.toDoubleOrNull() ?: 0.0
+                                    )
+                                    manualName = ""
+                                    nameSuggestions = emptyList()
+                                    showAddItemDialog = false
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (manualName.isNotBlank()) FreshGreenPrimary else BorderNatural
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, tint = if (manualName.isNotBlank()) Color.Black else CaptionTextNatural, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = if (isSlovak) "Uložiť do spíže" else "Uložit do spíže",
+                                color = if (manualName.isNotBlank()) Color.Black else CaptionTextNatural,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }
@@ -833,6 +1113,9 @@ fun PantryScreen(
                                                         scannedFoodProtein = "${result.protein}g"
                                                         scannedFoodCarbs = "${result.carbohydrates}g"
                                                         scannedFoodFat = "${result.fat}g"
+                                                        scannedFoodSugar = "${if (result.sugars >= 0) result.sugars else 0.0}g"
+                                                        scannedFoodServing = "${result.servingSizeG ?: 100}g"
+                                                        scannedFoodBrand = result.brand ?: ""
                                                         scannedFoodCategory = result.category
                                                         scannedFoodPrice = when (result.category) {
                                                             "Pantry" -> 35.0
@@ -922,6 +1205,9 @@ fun PantryScreen(
                                                     scannedFoodProtein = "${result.protein}g"
                                                     scannedFoodCarbs = "${result.carbohydrates}g"
                                                     scannedFoodFat = "${result.fat}g"
+                                                    scannedFoodSugar = "${if (result.sugars >= 0) result.sugars else 0.0}g"
+                                                    scannedFoodServing = "${result.servingSizeG ?: 100}g"
+                                                    scannedFoodBrand = result.brand ?: ""
                                                     scannedFoodCategory = result.category
                                                     scannedFoodPrice = when (result.category) {
                                                         "Pantry" -> 35.0
@@ -1056,22 +1342,38 @@ fun PantryScreen(
                             color = FreshGreenPrimary
                         )
 
+                        if (scannedFoodBrand.isNotBlank()) {
+                            Text(
+                                text = "🏷 ${if (isSlovak) "Značka" else "Značka"}: $scannedFoodBrand",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = SaffronGoldSecondary
+                            )
+                        }
+
                         Box(
                             modifier = Modifier
                                 .background(SoftGreenGlow, RoundedCornerShape(12.dp))
                                 .padding(horizontal = 14.dp, vertical = 6.dp)
                         ) {
                             Text(
-                                text = "🔥 $scannedFoodCalories kcal",
+                                text = "🔥 $scannedFoodCalories kcal / 100g",
                                 fontWeight = FontWeight.Bold,
                                 color = FreshGreenPrimary,
                                 fontSize = 16.sp
                             )
                         }
 
+                        Text(
+                            text = (if (isSlovak) "🍽 Odporúčaná porcia: " else "🍽 Doporučená porce: ") + scannedFoodServing,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = SaffronGoldSecondary
+                        )
+
                         HorizontalDivider(color = BorderNatural)
 
-                        // Nutritional macros info
+                        // Nutritional macros info (na 100 g/ml)
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceEvenly
@@ -1083,6 +1385,10 @@ fun PantryScreen(
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text("Sacharidy", fontSize = 11.sp, color = CaptionTextNatural)
                                 Text(scannedFoodCarbs, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = CreamText)
+                            }
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(if (isSlovak) "z toho cukry" else "z toho cukry", fontSize = 11.sp, color = CaptionTextNatural)
+                                Text(scannedFoodSugar, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TomatoRedTertiary)
                             }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text("Tuky", fontSize = 11.sp, color = CaptionTextNatural)
